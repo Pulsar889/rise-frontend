@@ -1,0 +1,945 @@
+{
+  "address": "BrhXEBGB269Qih5GJ2ZA3dzDgMLjh1BQTGy1KfGVrn9A",
+  "metadata": {
+    "name": "horizon_rewards",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Horizon Protocol - Rewards Program"
+  },
+  "instructions": [
+    {
+      "name": "checkpoint_gauge",
+      "docs": [
+        "Checkpoint a gauge — distribute epoch emissions based on gauge weight."
+      ],
+      "discriminator": [
+        112,
+        41,
+        162,
+        148,
+        196,
+        228,
+        36,
+        158
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_rewards",
+      "docs": [
+        "User claims accumulated HRZN rewards from a gauge."
+      ],
+      "discriminator": [
+        4,
+        144,
+        132,
+        71,
+        116,
+        23,
+        151,
+        80
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_hrzn_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_gauge",
+      "docs": [
+        "Create a new gauge for a liquidity pool."
+      ],
+      "discriminator": [
+        36,
+        92,
+        148,
+        102,
+        185,
+        224,
+        141,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "pool",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "deposit_lp",
+      "docs": [
+        "User deposits LP tokens into a gauge to earn HRZN rewards."
+      ],
+      "discriminator": [
+        83,
+        107,
+        16,
+        26,
+        26,
+        20,
+        130,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_lp_account",
+          "writable": true
+        },
+        {
+          "name": "gauge_lp_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101,
+                  95,
+                  108,
+                  112,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_rewards",
+      "docs": [
+        "Initialize the rewards program."
+      ],
+      "discriminator": [
+        91,
+        174,
+        112,
+        191,
+        233,
+        236,
+        147,
+        12
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "hrzn_mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch_emissions",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_epoch_emissions",
+      "docs": [
+        "Authority sets HRZN emissions for the next epoch."
+      ],
+      "discriminator": [
+        162,
+        141,
+        62,
+        122,
+        128,
+        21,
+        67,
+        139
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch_emissions",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_lp",
+      "docs": [
+        "User withdraws LP tokens from a gauge."
+      ],
+      "discriminator": [
+        225,
+        221,
+        45,
+        211,
+        49,
+        60,
+        51,
+        163
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_lp_account",
+          "writable": true
+        },
+        {
+          "name": "gauge_lp_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101,
+                  95,
+                  108,
+                  112,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Gauge",
+      "discriminator": [
+        9,
+        19,
+        249,
+        189,
+        158,
+        171,
+        226,
+        205
+      ]
+    },
+    {
+      "name": "RewardsConfig",
+      "discriminator": [
+        27,
+        65,
+        81,
+        182,
+        166,
+        101,
+        190,
+        207
+      ]
+    },
+    {
+      "name": "UserStake",
+      "discriminator": [
+        102,
+        53,
+        163,
+        107,
+        9,
+        138,
+        87,
+        153
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "GaugeNotActive",
+      "msg": "Gauge is not active"
+    },
+    {
+      "code": 6002,
+      "name": "NoRewardsToClaim",
+      "msg": "No rewards to claim"
+    },
+    {
+      "code": 6003,
+      "name": "MathOverflow",
+      "msg": "Math overflow occurred"
+    },
+    {
+      "code": 6004,
+      "name": "EpochNotEnded",
+      "msg": "Epoch has not ended yet"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Unauthorized — only authority can call this"
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientBalance",
+      "msg": "Insufficient LP balance"
+    }
+  ],
+  "types": [
+    {
+      "name": "Gauge",
+      "docs": [
+        "A gauge represents a liquidity pool or activity that receives HRZN emissions."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "docs": [
+              "The pool or activity this gauge represents."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "index",
+            "docs": [
+              "Gauge index."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "weight_bps",
+            "docs": [
+              "Weight in basis points — set by veHRZN gauge votes each epoch."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "active",
+            "docs": [
+              "Whether this gauge is active."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "reward_per_token",
+            "docs": [
+              "Accumulated HRZN per LP token (scaled by REWARD_SCALE)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_lp_deposited",
+            "docs": [
+              "Total LP tokens deposited into this gauge."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_checkpoint_epoch",
+            "docs": [
+              "Last epoch this gauge was checkpointed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_distributed",
+            "docs": [
+              "Total HRZN distributed to this gauge all time."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RewardsConfig",
+      "docs": [
+        "Global rewards configuration."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "hrzn_mint",
+            "docs": [
+              "HRZN token mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "epoch_emissions",
+            "docs": [
+              "Total HRZN emitted per epoch across all gauges."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "current_epoch",
+            "docs": [
+              "Current epoch number."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "epoch_start_slot",
+            "docs": [
+              "Slot when current epoch started."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "slots_per_epoch",
+            "docs": [
+              "Slots per epoch (~1 week)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "gauge_count",
+            "docs": [
+              "Total gauges created."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserStake",
+      "docs": [
+        "Tracks a user's LP deposit in a specific gauge."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet that owns this stake."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "gauge",
+            "docs": [
+              "The gauge this stake belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "lp_amount",
+            "docs": [
+              "LP tokens deposited."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reward_debt",
+            "docs": [
+              "reward_per_token at last claim checkpoint."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "pending_rewards",
+            "docs": [
+              "Accumulated unclaimed HRZN rewards."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

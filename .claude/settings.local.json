@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(rustc --version)",
+      "Bash(solana --version)",
+      "Read(//home/ronnie_llewellyn/**)",
+      "Bash(cargo build-sbf:*)",
+      "Bash(cd /home/ronnie_llewellyn/rise-protocol/programs/rise-governance/src __NEW_LINE_b3d6cb94c7598b24__ find . -name \"*.rs\")",
+      "Bash(xargs sed:*)"
+    ]
+  }
+}

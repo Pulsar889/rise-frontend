@@ -1,0 +1,26 @@
+{
+  "address": "FLMhtQDqmbwmgPK8ak1otv4mmSVcqs6H38hHvUUq7hPG",
+  "metadata": {
+    "name": "horizon_protocol",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [],
+      "args": []
+    }
+  ]
+}

@@ -1,0 +1,1548 @@
+{
+  "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo",
+  "metadata": {
+    "name": "rise_staking",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Rise Protocol - Staking Program"
+  },
+  "instructions": [
+    {
+      "name": "claim_revenue",
+      "docs": [
+        "User claims accumulated veRISE revenue share."
+      ],
+      "discriminator": [
+        4,
+        22,
+        151,
+        70,
+        183,
+        79,
+        73,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "claim_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  118,
+                  101,
+                  110,
+                  117,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "verise_balance_account"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_unstake",
+      "docs": [
+        "User redeems a matured WithdrawalTicket and receives their SOL."
+      ],
+      "discriminator": [
+        172,
+        113,
+        117,
+        178,
+        223,
+        245,
+        247,
+        118
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "writable": true
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collect_fees",
+      "docs": [
+        "Crank: collect fees and distribute to team, treasury, and veRISE index."
+      ],
+      "discriminator": [
+        164,
+        152,
+        207,
+        99,
+        30,
+        186,
+        19,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "team_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "credit_staking_revenue",
+      "docs": [
+        "Called by CDP program after transferring fee revenue into pool_vault.",
+        "Immediately credits the SOL to total_sol_staked and updates the exchange rate.",
+        "Permissionless — integrity guaranteed by vault balance check."
+      ],
+      "discriminator": [
+        62,
+        220,
+        217,
+        229,
+        68,
+        60,
+        34,
+        88
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_pool",
+      "docs": [
+        "Initialize the global staking pool."
+      ],
+      "discriminator": [
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority (governance multisig in production, deployer in dev)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "docs": [
+            "The global pool state account. Created here."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_sol_mint",
+          "docs": [
+            "The riseSOL token mint. Created before this instruction."
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "protocol_fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquid_buffer_target_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "initialize_treasury",
+      "docs": [
+        "Initialize the protocol treasury."
+      ],
+      "discriminator": [
+        124,
+        186,
+        211,
+        195,
+        85,
+        165,
+        129,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "team_wallet",
+          "type": "pubkey"
+        },
+        {
+          "name": "team_fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "verise_share_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "mint_for_cdp",
+      "docs": [
+        "Called by CDP program via CPI to mint riseSOL to a borrower.",
+        "Authorized by cdp_config PDA signer. Does not affect staking_rise_sol_supply —",
+        "CDP supply is tracked separately in cdp_rise_sol_minted on the CDP side."
+      ],
+      "discriminator": [
+        148,
+        136,
+        209,
+        42,
+        197,
+        188,
+        78,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "cdp_config",
+          "docs": [
+            "CDP config PDA — must match global_pool.cdp_config_pubkey.",
+            "The CDP program signs this CPI with its cdp_config PDA seeds [b\"cdp_config\"]."
+          ],
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_sol_mint",
+          "writable": true
+        },
+        {
+          "name": "recipient",
+          "docs": [
+            "Borrower's riseSOL token account to mint into."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "notify_rise_sol_burned",
+      "docs": [
+        "Called by CDP program via CPI after burning riseSOL tokens as interest payment.",
+        "Decrements staking_rise_sol_supply so the exchange rate rises to reflect the",
+        "reduced supply — distributing the interest yield to remaining stakers."
+      ],
+      "discriminator": [
+        223,
+        140,
+        158,
+        25,
+        185,
+        39,
+        101,
+        9
+      ],
+      "accounts": [
+        {
+          "name": "cdp_config",
+          "docs": [
+            "CDP config PDA — must match global_pool.cdp_config_pubkey.",
+            "The CDP program signs this CPI with its cdp_config PDA seeds [b\"cdp_config\"]."
+          ],
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "receive_cdp_liquidity",
+      "docs": [
+        "Called after seized CDP collateral has been converted to SOL and deposited",
+        "into pool_vault. Registers the amount as liquid buffer so withdrawal tickets",
+        "can be paid out. Permissionless — verified by vault balance check."
+      ],
+      "discriminator": [
+        26,
+        102,
+        131,
+        87,
+        150,
+        222,
+        43,
+        197
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — anyone can call this once the SOL is in pool_vault."
+          ],
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "sol_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "register_external_revenue",
+      "docs": [
+        "External programs (e.g. CDP) call this to register revenue they have",
+        "already deposited into treasury_vault, updating the veRISE revenue index."
+      ],
+      "discriminator": [
+        220,
+        218,
+        8,
+        74,
+        40,
+        214,
+        237,
+        240
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Authorized caller — in practice this will be the CDP program's",
+            "cdp_fee_vault PDA signing via CPI invoke_signed."
+          ],
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "verise_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "reserve_lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_cdp_config",
+      "docs": [
+        "Authority-only: register the CDP config PDA to authorize CDP CPI calls.",
+        "Call once after both programs are deployed."
+      ],
+      "discriminator": [
+        109,
+        189,
+        141,
+        174,
+        218,
+        26,
+        214,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "cdp_config_pubkey",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "stake_sol",
+      "docs": [
+        "User deposits SOL and receives riseSOL."
+      ],
+      "discriminator": [
+        200,
+        38,
+        157,
+        155,
+        245,
+        57,
+        236,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_sol_mint",
+          "writable": true
+        },
+        {
+          "name": "user_rise_sol_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unstake_rise_sol",
+      "docs": [
+        "User burns riseSOL and receives a WithdrawalTicket claimable after ~2 epochs."
+      ],
+      "discriminator": [
+        217,
+        16,
+        50,
+        40,
+        240,
+        145,
+        90,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "writable": true
+        },
+        {
+          "name": "rise_sol_mint",
+          "writable": true
+        },
+        {
+          "name": "user_rise_sol_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "rise_sol_amount",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "update_exchange_rate",
+      "docs": [
+        "Crank: reads stake account balances and updates the exchange rate.",
+        "stake_lamports_total: sum of all validator stake account balances (0 until delegation is built)."
+      ],
+      "discriminator": [
+        69,
+        102,
+        48,
+        181,
+        8,
+        41,
+        8,
+        1
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "stake_lamports_total",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_treasury_config",
+      "docs": [
+        "Authority updates treasury configuration."
+      ],
+      "discriminator": [
+        129,
+        100,
+        213,
+        18,
+        68,
+        118,
+        249,
+        154
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Only authority can update treasury config."
+          ],
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "team_wallet",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "team_fee_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "verise_share_bps",
+          "type": {
+            "option": "u16"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalPool",
+      "discriminator": [
+        162,
+        244,
+        124,
+        37,
+        148,
+        94,
+        28,
+        50
+      ]
+    },
+    {
+      "name": "ProtocolTreasury",
+      "discriminator": [
+        162,
+        26,
+        123,
+        61,
+        102,
+        146,
+        47,
+        73
+      ]
+    },
+    {
+      "name": "RevenueClaimState",
+      "discriminator": [
+        4,
+        193,
+        29,
+        154,
+        136,
+        139,
+        221,
+        134
+      ]
+    },
+    {
+      "name": "WithdrawalTicket",
+      "discriminator": [
+        92,
+        140,
+        181,
+        69,
+        244,
+        220,
+        233,
+        156
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "PoolPaused",
+      "msg": "The pool is currently paused"
+    },
+    {
+      "code": 6001,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientLiquidity",
+      "msg": "Insufficient liquid buffer for immediate redemption"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidExchangeRate",
+      "msg": "Exchange rate would be invalid after this operation"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidFeeBps",
+      "msg": "Protocol fee basis points cannot exceed 10000"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidBufferBps",
+      "msg": "Liquid buffer target basis points cannot exceed 10000"
+    },
+    {
+      "code": 6006,
+      "name": "MathOverflow",
+      "msg": "Math overflow occurred"
+    },
+    {
+      "code": 6007,
+      "name": "StaleOraclePrice",
+      "msg": "Price oracle data is stale"
+    },
+    {
+      "code": 6008,
+      "name": "UnstakeNotReady",
+      "msg": "Withdrawal ticket is not yet claimable — epoch delay has not passed"
+    },
+    {
+      "code": 6009,
+      "name": "Unauthorized",
+      "msg": "Caller is not authorized to perform this action"
+    }
+  ],
+  "types": [
+    {
+      "name": "GlobalPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "rise_sol_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_sol_staked",
+            "type": "u128"
+          },
+          {
+            "name": "staking_rise_sol_supply",
+            "type": "u128"
+          },
+          {
+            "name": "exchange_rate",
+            "type": "u128"
+          },
+          {
+            "name": "last_rate_update_epoch",
+            "type": "u64"
+          },
+          {
+            "name": "liquid_buffer_lamports",
+            "type": "u128"
+          },
+          {
+            "name": "liquid_buffer_target_bps",
+            "type": "u16"
+          },
+          {
+            "name": "protocol_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "pending_withdrawals_lamports",
+            "docs": [
+              "SOL committed to pending withdrawal tickets, not yet claimed."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "cdp_config_pubkey",
+            "docs": [
+              "CDP config PDA authorized to call notify_rise_sol_burned.",
+              "Set once by authority via set_cdp_config after both programs are deployed."
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_wallet",
+            "docs": [
+              "Team salary wallet — receives team_fee_bps of all revenue."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_fee_bps",
+            "docs": [
+              "Team salary split in basis points. Default: 500 (5%).",
+              "Adjustable by authority only."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "verise_share_bps",
+            "docs": [
+              "Of the remaining 95%, what percentage goes to veRISE holders.",
+              "Default: 5000 (50%). Adjustable by governance."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "reserve_lamports",
+            "docs": [
+              "Total SOL accumulated in treasury reserve (retained portion)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "revenue_index",
+            "docs": [
+              "Global revenue index for veRISE reward tracking.",
+              "Increases each epoch by (epoch_revenue_for_verise / total_verise_supply)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_distributed",
+            "docs": [
+              "Total SOL distributed to veRISE holders all time."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "last_collection_epoch",
+            "docs": [
+              "Last epoch fees were collected."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RevenueClaimState",
+      "docs": [
+        "Tracks a veRISE holder's revenue claim state."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet this claim state belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "last_claimed_index",
+            "docs": [
+              "The revenue index at which rewards were last claimed."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_claimed",
+            "docs": [
+              "Total SOL claimed all time by this wallet."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalTicket",
+      "docs": [
+        "A queued unstake request. Created by `unstake_rise_sol`, claimed by `claim_unstake`",
+        "after UNSTAKE_EPOCH_DELAY epochs have passed."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Wallet that requested the unstake."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_amount",
+            "docs": [
+              "SOL to return, locked in at the exchange rate when the ticket was created."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "claimable_epoch",
+            "docs": [
+              "Earliest epoch the owner can call `claim_unstake`."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Nonce — allows multiple outstanding tickets per wallet."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

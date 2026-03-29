@@ -1,0 +1,635 @@
+"use client";
+import { useState, useCallback, useEffect } from "react";
+import { useWallet, useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
+import type { AnchorWallet } from "@solana/wallet-adapter-react";
+import {
+  PublicKey,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+  Keypair,
+  SYSVAR_RENT_PUBKEY,
+} from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
+import { BN } from "@coral-xyz/anchor";
+import { getProvider, getGovernanceProgram } from "@/lib/programs";
+import {
+  deriveGovernanceConfig,
+  deriveRiseVaultGov,
+  deriveVeLock,
+  deriveGaugeVotePda,
+  deriveProposal,
+  deriveVoteRecord,
+  deriveProtocolTreasury,
+  STAKING_PROGRAM_ID,
+} from "@/lib/pdas";
+
+const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+// 1 week in slots, matching GovernanceConfig::SLOTS_PER_WEEK on-chain
+const SLOTS_PER_WEEK = 604_800;
+// Approximate ms between slots on Solana (used only for Date estimation)
+const MS_PER_SLOT = 400;
+
+// ── Interfaces ────────────────────────────────────────────────────────────────
+
+export interface VeNft {
+  id: string;                   // VeLock PDA address (base58)
+  nonce: number;
+  lockNumber: number;           // sequential NFT display number ("veRISE Lock #N")
+  lockedRise: number;           // RISE locked, in human units (/ 1e9)
+  veRisePower: number;          // current time-decayed veRISE, in human units (/ 1e9)
+  lockWeeks: number;            // approximate original lock duration in weeks
+  lockStartSlot: number;
+  lockEndSlot: number;
+  expiresAt: Date;              // estimated from slots + current time
+  nftMint: string;
+  lastRevenueIndex: bigint;     // u128 raw for claimable computation
+  totalRevenueClaimed: number;  // SOL claimed across this lock's lifetime
+}
+
+export interface Proposal {
+  id: string;         // Proposal PDA address (base58) — passed to vote()
+  title: string;      // first 70 chars of description
+  description: string;
+  status: "active" | "passed" | "failed" | "pending";
+  votesFor: number;     // veRISE human units (/ 1e9) — ProposalCard divides by 1_000_000 for "M" display
+  votesAgainst: number;
+  totalVotes: number;
+  endsAt: Date;
+  myVote?: "for" | "against";
+}
+
+export interface GaugeAllocationEntry {
+  pool: string;       // pool PublicKey base58
+  weightBps: number;  // 0–10000
+}
+
+export interface GaugeVoteData {
+  epoch: number;
+  gauges: GaugeAllocationEntry[];
+}
+
+// Static gauge list — real data comes from rise-rewards; kept here for GaugeVote component.
+// Pool addresses will be wired when rewards program is connected.
+export interface Gauge {
+  id: string;
+  name: string;
+  weight: number;   // protocol weight %
+  myWeight: number; // user's last submitted weight %
+}
+
+const STATIC_GAUGES: Gauge[] = [
+  { id: "g-1", name: "SOL / riseSOL",  weight: 45, myWeight: 60 },
+  { id: "g-2", name: "RISE / SOL",     weight: 30, myWeight: 30 },
+  { id: "g-3", name: "riseSOL / USDC", weight: 25, myWeight: 10 },
+];
+
+// Placeholder pool pubkeys until rewards program is wired
+const GAUGE_POOL_ADDRESSES: Record<string, string> = {
+  "g-1": SystemProgram.programId.toBase58(),
+  "g-2": SystemProgram.programId.toBase58(),
+  "g-3": SystemProgram.programId.toBase58(),
+};
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
+export function useGovernance() {
+  const [locks, setLocks] = useState<VeNft[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [gaugeVote, setGaugeVote] = useState<GaugeVoteData | null>(null);
+  const [gauges] = useState<Gauge[]>(STATIC_GAUGES);
+  const [totalVerise, setTotalVerise] = useState(0);
+  const [claimableRevenue, setClaimableRevenue] = useState(0);
+
+  // Track highest-seen nonce so new locks always get a fresh slot
+  const [nextLockNonce, setNextLockNonce] = useState(0);
+
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [loadingLock, setLoadingLock] = useState(false);
+  const [loadingUnlock, setLoadingUnlock] = useState<string | null>(null);
+  const [loadingVote, setLoadingVote] = useState<string | null>(null);
+  const [loadingClaim, setLoadingClaim] = useState(false);
+  const [loadingGauge, setLoadingGauge] = useState(false);
+
+  const wallet = useAnchorWallet();
+  const { publicKey } = useWallet();
+  const { connection } = useConnection();
+
+  // Derived values kept for backward compat with governance page + dashboard
+  const veRiseBalance   = locks.reduce((s, l) => s + l.veRisePower, 0);
+  const userVerise      = veRiseBalance;
+  const totalLockedRise = locks.reduce((s, l) => s + l.lockedRise, 0);
+
+  // ── On-chain reads ──────────────────────────────────────────────────────────
+
+  const refresh = useCallback(async () => {
+    setFetching(true);
+    setFetchError(null);
+    try {
+      // Use a dummy read wallet so public data (proposals, config) loads before connecting
+      const readWallet: AnchorWallet = wallet ?? {
+        publicKey: Keypair.generate().publicKey,
+        signTransaction: async (tx) => tx,
+        signAllTransactions: async (txs) => txs,
+      };
+      const provider = getProvider(readWallet);
+      const gov = getGovernanceProgram(provider);
+
+      const currentSlot = await connection.getSlot();
+      const nowMs = Date.now();
+
+      // Estimate a wall-clock Date for an on-chain slot
+      function slotToDate(slot: number): Date {
+        return new Date(nowMs + (slot - currentSlot) * MS_PER_SLOT);
+      }
+
+      // ── GovernanceConfig ────────────────────────────────────────────────────
+      const configPda  = deriveGovernanceConfig();
+      const configInfo = await connection.getAccountInfo(configPda);
+      if (!configInfo) {
+        // Governance program not yet initialized on this validator
+        setLocks([]);
+        setProposals([]);
+        setTotalVerise(0);
+        setClaimableRevenue(0);
+        return;
+      }
+
+      const config        = await (gov.account as any)["governanceConfig"].fetch(configPda);
+      const totalVeriseBig = BigInt(config.totalVerise.toString());
+      // Human-readable veRISE: divide by 1e9 (same lamport scale as RISE token)
+      const totalVeriseDisplay = Number((totalVeriseBig * 1000n) / BigInt(LAMPORTS_PER_SOL)) / 1000;
+      setTotalVerise(totalVeriseDisplay);
+
+      const proposalCount: number = config.proposalCount.toNumber();
+      const quorumBps: number     = config.quorumBps;
+
+      // ── VeLock accounts ─────────────────────────────────────────────────────
+      // VeLock accounts are closed (space reclaimed) on unlock, so .all() only
+      // returns active locks — no need to filter by is_open.
+      let mappedLocks: VeNft[] = [];
+      let totalClaimableLamports = 0n;
+
+      if (publicKey) {
+        // Layout: [8 discriminator][32 owner] → memcmp at offset 8
+        const rawLocks = await (gov.account as any)["veLock"].all([
+          { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
+        ]);
+
+        if (rawLocks.length > 0) {
+          const maxNonce = Math.max(...rawLocks.map((l: any) => l.account.nonce as number));
+          setNextLockNonce((prev) => Math.max(prev, maxNonce + 1));
+        }
+
+        // Revenue index: bytes 108–124 of the staking ProtocolTreasury account (u128 LE)
+        let revenueIndex = 0n;
+        try {
+          const treasuryInfo = await connection.getAccountInfo(deriveProtocolTreasury());
+          if (treasuryInfo && treasuryInfo.data.length >= 124) {
+            const slice = treasuryInfo.data.slice(108, 124);
+            for (let i = 15; i >= 0; i--) {
+              revenueIndex = revenueIndex * 256n + BigInt(slice[i]);
+            }
+          }
+        } catch {
+          // Treasury not yet initialized — claimableRevenue stays 0
+        }
+
+        mappedLocks = rawLocks.map((raw: any) => {
+          const acc = raw.account;
+          const nonce: number      = acc.nonce;
+          const lockNumber: number = acc.lockNumber.toNumber();
+          const lockStartSlot      = acc.lockStartSlot.toNumber();
+          const lockEndSlot        = acc.lockEndSlot.toNumber();
+          const veriseAmountRaw    = acc.veriseAmount.toNumber();
+          const lastRevIdx         = BigInt(acc.lastRevenueIndex.toString());
+
+          // Mirror on-chain VeLock::current_verise(): linear decay over the lock period
+          let currentVeriseRaw = 0;
+          if (currentSlot < lockEndSlot) {
+            const remaining = lockEndSlot - currentSlot;
+            const total     = lockEndSlot - lockStartSlot;
+            if (total > 0) currentVeriseRaw = Math.floor(veriseAmountRaw * remaining / total);
+          }
+
+          // claimable = (revenueIndex - last_revenue_index) * current_verise / total_verise
+          const indexDelta = revenueIndex > lastRevIdx ? revenueIndex - lastRevIdx : 0n;
+          if (indexDelta > 0n && totalVeriseBig > 0n) {
+            totalClaimableLamports += indexDelta * BigInt(currentVeriseRaw) / totalVeriseBig;
+          }
+
+          return {
+            id:                  raw.publicKey.toBase58(),
+            nonce,
+            lockNumber,
+            lockedRise:          acc.riseLocked.toNumber() / LAMPORTS_PER_SOL,
+            veRisePower:         currentVeriseRaw / LAMPORTS_PER_SOL,
+            lockWeeks:           Math.round((lockEndSlot - lockStartSlot) / SLOTS_PER_WEEK),
+            lockStartSlot,
+            lockEndSlot,
+            expiresAt:           slotToDate(lockEndSlot),
+            nftMint:             acc.nftMint.toBase58(),
+            lastRevenueIndex:    lastRevIdx,
+            totalRevenueClaimed: acc.totalRevenueClaimed.toNumber() / LAMPORTS_PER_SOL,
+          };
+        });
+
+        setClaimableRevenue(Number(totalClaimableLamports) / LAMPORTS_PER_SOL);
+
+        // ── GaugeVote for this user ───────────────────────────────────────────
+        try {
+          const gvData = await (gov.account as any)["gaugeVote"].fetch(deriveGaugeVotePda(publicKey));
+          const gaugeEntries: GaugeAllocationEntry[] = (gvData.gauges as any[])
+            .filter((g: any) => g.weightBps > 0)
+            .map((g: any) => ({
+              pool:      (g.pool as PublicKey).toBase58(),
+              weightBps: g.weightBps as number,
+            }));
+          setGaugeVote({ epoch: gvData.epoch.toNumber(), gauges: gaugeEntries });
+        } catch {
+          setGaugeVote(null);
+        }
+      }
+
+      setLocks(mappedLocks);
+
+      // ── Proposals ───────────────────────────────────────────────────────────
+      if (proposalCount === 0) {
+        setProposals([]);
+        return;
+      }
+
+      // VoteRecord layout: [8 discriminator][32 voter] → build map proposalPDA → vote_for
+      const voteRecordMap = new Map<string, boolean>();
+      if (publicKey) {
+        try {
+          const voteRecords = await (gov.account as any)["voteRecord"].all([
+            { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
+          ]);
+          for (const vr of voteRecords) {
+            voteRecordMap.set((vr.account.proposal as PublicKey).toBase58(), vr.account.voteFor as boolean);
+          }
+        } catch {
+          // No vote records yet
+        }
+      }
+
+      // Fetch proposals 0 … proposalCount-1 in parallel
+      const rawProposals = await Promise.all(
+        Array.from({ length: proposalCount }, (_, i) => deriveProposal(i)).map(async (pda) => {
+          try {
+            const data = await (gov.account as any)["proposal"].fetch(pda);
+            return { pda, data };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const mappedProposals: Proposal[] = rawProposals
+        .filter((p): p is { pda: PublicKey; data: any } => p !== null)
+        .map(({ pda, data }) => {
+          // Decode [u8; 128] description, strip trailing null bytes
+          const description = Buffer.from(data.description as number[])
+            .toString("utf8")
+            .replace(/\0+$/, "")
+            .trim();
+          const title = description.length > 70 ? description.slice(0, 67) + "…" : description;
+
+          const votingEndSlot: number = data.votingEndSlot.toNumber();
+          const isActive = currentSlot <= votingEndSlot && !(data.executed as boolean);
+
+          // votes_for / votes_against are u128 (BN); convert via BigInt then divide by 1e9
+          const votesForBig     = BigInt(data.votesFor.toString());
+          const votesAgainstBig = BigInt(data.votesAgainst.toString());
+          const totalVotesBig   = votesForBig + votesAgainstBig;
+
+          // Mirror Proposal::is_passed(): quorum check + majority
+          const quorum   = totalVeriseBig * BigInt(quorumBps) / 10_000n;
+          const isPassed = totalVotesBig >= quorum && votesForBig > votesAgainstBig;
+
+          let status: Proposal["status"];
+          if (data.executed as boolean) {
+            status = "passed";
+          } else if (isActive) {
+            status = "active";
+          } else if (isPassed) {
+            status = "pending"; // passed but awaiting execute_proposal timelock
+          } else {
+            status = "failed";
+          }
+
+          const pdaStr    = pda.toBase58();
+          const myVoteFor = voteRecordMap.get(pdaStr);
+
+          return {
+            id:          pdaStr,
+            title,
+            description,
+            status,
+            votesFor:     Number(votesForBig)     / LAMPORTS_PER_SOL,
+            votesAgainst: Number(votesAgainstBig) / LAMPORTS_PER_SOL,
+            totalVotes:   Number(totalVotesBig)   / LAMPORTS_PER_SOL,
+            endsAt:      slotToDate(votingEndSlot),
+            myVote:      myVoteFor !== undefined ? (myVoteFor ? "for" : "against") : undefined,
+          };
+        });
+
+      setProposals(mappedProposals);
+    } catch (err: any) {
+      setFetchError(err?.message ?? "Failed to load governance data");
+    } finally {
+      setFetching(false);
+    }
+  }, [wallet, publicKey, connection]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // ── Transactions ────────────────────────────────────────────────────────────
+
+  /**
+   * Locks RISE tokens and mints a veRISE Lock NFT.
+   * @param amount       RISE tokens in human units (multiplied by 1e9 internally)
+   * @param durationDays lock duration in days (LockForm passes weeksNum * 7)
+   */
+  const lockRise = useCallback(async (amount: number, durationDays: number) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    setLoadingLock(true);
+    try {
+      const provider  = getProvider(wallet);
+      const gov       = getGovernanceProgram(provider);
+      const configPda = deriveGovernanceConfig();
+      const config    = await (gov.account as any)["governanceConfig"].fetch(configPda);
+      const riseMint  = config.riseMint as PublicKey;
+
+      // Convert days → slots: SLOTS_PER_WEEK / 7 days
+      const lockSlots = Math.floor(durationDays * SLOTS_PER_WEEK / 7);
+      const nonce     = nextLockNonce;
+
+      const userRiseAccount = await getAssociatedTokenAddress(riseMint, publicKey);
+
+      // Each lock gets a fresh NFT mint keypair (0-decimal, supply = 1)
+      const nftMintKp  = Keypair.generate();
+      const userNftAta = await getAssociatedTokenAddress(nftMintKp.publicKey, publicKey);
+
+      // Metaplex metadata PDA: seeds = ["metadata", TOKEN_METADATA_PROGRAM_ID, nft_mint]
+      const [nftMetadata] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+          nftMintKp.publicKey.toBuffer(),
+        ],
+        TOKEN_METADATA_PROGRAM_ID
+      );
+
+      await gov.methods
+        .lockRise(new BN(amount * LAMPORTS_PER_SOL), new BN(lockSlots), nonce)
+        .accounts({
+          user:                   publicKey,
+          config:                 configPda,
+          lock:                   deriveVeLock(publicKey, nonce),
+          userRiseAccount,
+          riseVault:              deriveRiseVaultGov(),
+          nftMint:                nftMintKp.publicKey,
+          userNftAta,
+          nftMetadata,
+          tokenMetadataProgram:   TOKEN_METADATA_PROGRAM_ID,
+          treasury:               deriveProtocolTreasury(),
+          tokenProgram:           TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram:          SystemProgram.programId,
+          rent:                   SYSVAR_RENT_PUBKEY,
+        })
+        .signers([nftMintKp])
+        .rpc();
+
+      setNextLockNonce((n) => n + 1);
+      await refresh();
+    } finally {
+      setLoadingLock(false);
+    }
+  }, [wallet, publicKey, nextLockNonce, refresh]);
+
+  /**
+   * Burns the veRISE NFT and returns locked RISE once the lock has expired.
+   * @param lockId  VeLock PDA address (the lock.id from VeNft)
+   */
+  const unlockRise = useCallback(async (lockId: string) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    const lock = locks.find((l) => l.id === lockId);
+    if (!lock) throw new Error("Lock not found — try refreshing");
+
+    setLoadingUnlock(lockId);
+    try {
+      const provider  = getProvider(wallet);
+      const gov       = getGovernanceProgram(provider);
+      const configPda = deriveGovernanceConfig();
+      const config    = await (gov.account as any)["governanceConfig"].fetch(configPda);
+      const riseMint  = config.riseMint as PublicKey;
+      const nftMint   = new PublicKey(lock.nftMint);
+
+      await gov.methods
+        .unlockRise()
+        .accounts({
+          user:            publicKey,
+          config:          configPda,
+          lock:            new PublicKey(lockId),
+          userRiseAccount: await getAssociatedTokenAddress(riseMint, publicKey),
+          riseVault:       deriveRiseVaultGov(),
+          nftMint,
+          userNftAta:      await getAssociatedTokenAddress(nftMint, publicKey),
+          tokenProgram:    TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      await refresh();
+    } finally {
+      setLoadingUnlock(null);
+    }
+  }, [wallet, publicKey, locks, refresh]);
+
+  /**
+   * Extends an active lock by additional slots.
+   * @param lockId          VeLock PDA address
+   * @param additionalSlots slots to add onto the current lock_end_slot
+   */
+  const extendLock = useCallback(async (lockId: string, additionalSlots: number) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    if (!locks.find((l) => l.id === lockId)) throw new Error("Lock not found");
+
+    const provider = getProvider(wallet);
+    const gov      = getGovernanceProgram(provider);
+
+    await gov.methods
+      .extendLock(new BN(additionalSlots))
+      .accounts({
+        user:   publicKey,
+        config: deriveGovernanceConfig(),
+        lock:   new PublicKey(lockId),
+      })
+      .rpc();
+
+    await refresh();
+  }, [wallet, publicKey, locks, refresh]);
+
+  /**
+   * Casts a vote using the first active (non-expired) lock.
+   * @param proposalId  Proposal PDA address (proposal.id from the Proposal interface)
+   * @param support     true = for, false = against
+   */
+  const vote = useCallback(async (proposalId: string, support: boolean) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+
+    const activeLock = locks.find((l) => l.expiresAt > new Date()) ?? locks[0];
+    if (!activeLock) throw new Error("No lock found — lock RISE first to vote");
+
+    setLoadingVote(proposalId);
+    try {
+      const provider    = getProvider(wallet);
+      const gov         = getGovernanceProgram(provider);
+      const proposalPda = new PublicKey(proposalId);
+
+      await gov.methods
+        .castVote(support)
+        .accounts({
+          voter:         publicKey,
+          config:        deriveGovernanceConfig(),
+          lock:          deriveVeLock(publicKey, activeLock.nonce),
+          proposal:      proposalPda,
+          voteRecord:    deriveVoteRecord(publicKey, proposalPda),
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      await refresh();
+    } finally {
+      setLoadingVote(null);
+    }
+  }, [wallet, publicKey, locks, refresh]);
+
+  /**
+   * Claims accrued SOL revenue share for every active lock.
+   * Individual lock failures (nothing to claim yet) are silently skipped.
+   */
+  const claimRevenue = useCallback(async () => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    setLoadingClaim(true);
+    try {
+      const provider   = getProvider(wallet);
+      const gov        = getGovernanceProgram(provider);
+      const configPda  = deriveGovernanceConfig();
+      const treasuryPda = deriveProtocolTreasury();
+
+      const [treasuryVaultPda, tvBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("treasury_vault")],
+        STAKING_PROGRAM_ID
+      );
+
+      for (const lock of locks) {
+        if (lock.veRisePower <= 0) continue;
+        try {
+          await gov.methods
+            .claimRevenueShare(tvBump)
+            .accounts({
+              user:          publicKey,
+              config:        configPda,
+              lock:          deriveVeLock(publicKey, lock.nonce),
+              treasury:      treasuryPda,
+              treasuryVault: treasuryVaultPda,
+              systemProgram: SystemProgram.programId,
+            })
+            .rpc();
+        } catch {
+          // Lock has no claimable revenue yet — continue to next
+        }
+      }
+
+      await refresh();
+    } finally {
+      setLoadingClaim(false);
+    }
+  }, [wallet, publicKey, locks, refresh]);
+
+  /**
+   * Submits gauge weight allocations using the first active lock.
+   * @param weights  { gaugeId: percentage } from GaugeVote component — must sum to 100
+   */
+  const setGaugeWeights = useCallback(async (weights: Record<string, number>) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+
+    const activeLock = locks.find((l) => l.expiresAt > new Date()) ?? locks[0];
+    if (!activeLock) throw new Error("No active lock — lock RISE first to vote on gauges");
+
+    setLoadingGauge(true);
+    try {
+      const provider = getProvider(wallet);
+      const gov      = getGovernanceProgram(provider);
+
+      // Normalise percentages → bps; make last entry absorb any rounding residual
+      const entries  = Object.entries(weights).filter(([, pct]) => pct > 0);
+      const totalPct = entries.reduce((s, [, pct]) => s + pct, 0);
+      let bpsSum = 0;
+      const allocations = entries.map(([gaugeId, pct], i) => {
+        const bps = i === entries.length - 1
+          ? 10_000 - bpsSum
+          : Math.round((pct / totalPct) * 10_000);
+        bpsSum += bps;
+        return {
+          pool:      new PublicKey(GAUGE_POOL_ADDRESSES[gaugeId] ?? SystemProgram.programId.toBase58()),
+          weightBps: bps,
+        };
+      });
+
+      await gov.methods
+        .voteGauge(allocations)
+        .accounts({
+          user:          publicKey,
+          config:        deriveGovernanceConfig(),
+          lock:          deriveVeLock(publicKey, activeLock.nonce),
+          gaugeVote:     deriveGaugeVotePda(publicKey),
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      await refresh();
+    } finally {
+      setLoadingGauge(false);
+    }
+  }, [wallet, publicKey, locks, refresh]);
+
+  return {
+    // Reads
+    locks,
+    proposals,
+    gaugeVote,
+    gauges,
+    totalVerise,
+    userVerise,
+    veRiseBalance,      // alias — kept for dashboard + governance page compat
+    totalLockedRise,
+    claimableRevenue,
+    fetching,
+    fetchError,
+    refresh,
+    // Per-operation loading states
+    loadingLock,
+    loadingUnlock,
+    loadingVote,
+    loadingClaim,
+    loadingGauge,
+    // Transactions
+    lockRise,
+    unlockRise,
+    extendLock,
+    vote,
+    claimRevenue,
+    setGaugeWeights,
+  };
+}

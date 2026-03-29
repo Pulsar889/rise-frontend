@@ -1,0 +1,1055 @@
+{
+  "address": "9TdXV8E9znno8GgGbHNAq5X9QeZ7ve8cKPNPctwUKVVS",
+  "metadata": {
+    "name": "horizon_staking",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Horizon Protocol - Staking Program"
+  },
+  "instructions": [
+    {
+      "name": "claim_revenue",
+      "docs": [
+        "User claims accumulated veHRZN revenue share."
+      ],
+      "discriminator": [
+        4,
+        22,
+        151,
+        70,
+        183,
+        79,
+        73,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "claim_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  118,
+                  101,
+                  110,
+                  117,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vehrzn_balance_account"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collect_fees",
+      "docs": [
+        "Crank: collect fees and distribute to team, treasury, and veHRZN index."
+      ],
+      "discriminator": [
+        164,
+        152,
+        207,
+        99,
+        30,
+        186,
+        19,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "team_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_pool",
+      "docs": [
+        "Initialize the global staking pool."
+      ],
+      "discriminator": [
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority (governance multisig in production, deployer in dev)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "docs": [
+            "The global pool state account. Created here."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "hsol_mint",
+          "docs": [
+            "The hSOL token mint. Created before this instruction."
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "protocol_fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquid_buffer_target_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "initialize_treasury",
+      "docs": [
+        "Initialize the protocol treasury."
+      ],
+      "discriminator": [
+        124,
+        186,
+        211,
+        195,
+        85,
+        165,
+        129,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "team_wallet",
+          "type": "pubkey"
+        },
+        {
+          "name": "team_fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "vehrzn_share_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "register_external_revenue",
+      "docs": [
+        "External programs (e.g. CDP) call this to register revenue they have",
+        "already deposited into treasury_vault, updating the veHRZN revenue index."
+      ],
+      "discriminator": [
+        220,
+        218,
+        8,
+        74,
+        40,
+        214,
+        237,
+        240
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Authorized caller — in practice this will be the CDP program's",
+            "cdp_fee_vault PDA signing via CPI invoke_signed."
+          ],
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "vehrzn_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "reserve_lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stake_sol",
+      "docs": [
+        "User deposits SOL and receives hSOL."
+      ],
+      "discriminator": [
+        200,
+        38,
+        157,
+        155,
+        245,
+        57,
+        236,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "hsol_mint",
+          "writable": true
+        },
+        {
+          "name": "user_hsol_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unstake_hsol",
+      "docs": [
+        "User deposits hSOL and queues SOL redemption."
+      ],
+      "discriminator": [
+        184,
+        36,
+        159,
+        50,
+        63,
+        194,
+        102,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "hsol_mint",
+          "writable": true
+        },
+        {
+          "name": "user_hsol_account",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "hsol_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_exchange_rate",
+      "docs": [
+        "Crank: accrues staking rewards and updates exchange rate."
+      ],
+      "discriminator": [
+        69,
+        102,
+        48,
+        181,
+        8,
+        41,
+        8,
+        1
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_treasury_config",
+      "docs": [
+        "Authority updates treasury configuration."
+      ],
+      "discriminator": [
+        129,
+        100,
+        213,
+        18,
+        68,
+        118,
+        249,
+        154
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Only authority can update treasury config."
+          ],
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "team_wallet",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "team_fee_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "vehrzn_share_bps",
+          "type": {
+            "option": "u16"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalPool",
+      "discriminator": [
+        162,
+        244,
+        124,
+        37,
+        148,
+        94,
+        28,
+        50
+      ]
+    },
+    {
+      "name": "ProtocolTreasury",
+      "discriminator": [
+        162,
+        26,
+        123,
+        61,
+        102,
+        146,
+        47,
+        73
+      ]
+    },
+    {
+      "name": "RevenueClaimState",
+      "discriminator": [
+        4,
+        193,
+        29,
+        154,
+        136,
+        139,
+        221,
+        134
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "PoolPaused",
+      "msg": "The pool is currently paused"
+    },
+    {
+      "code": 6001,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientLiquidity",
+      "msg": "Insufficient liquid buffer for immediate redemption"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidExchangeRate",
+      "msg": "Exchange rate would be invalid after this operation"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidFeeBps",
+      "msg": "Protocol fee basis points cannot exceed 10000"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidBufferBps",
+      "msg": "Liquid buffer target basis points cannot exceed 10000"
+    },
+    {
+      "code": 6006,
+      "name": "MathOverflow",
+      "msg": "Math overflow occurred"
+    },
+    {
+      "code": 6007,
+      "name": "StaleOraclePrice",
+      "msg": "Price oracle data is stale"
+    }
+  ],
+  "types": [
+    {
+      "name": "GlobalPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "hsol_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_sol_staked",
+            "type": "u128"
+          },
+          {
+            "name": "total_hsol_supply",
+            "type": "u128"
+          },
+          {
+            "name": "exchange_rate",
+            "type": "u128"
+          },
+          {
+            "name": "last_rate_update_epoch",
+            "type": "u64"
+          },
+          {
+            "name": "liquid_buffer_lamports",
+            "type": "u128"
+          },
+          {
+            "name": "liquid_buffer_target_bps",
+            "type": "u16"
+          },
+          {
+            "name": "protocol_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_wallet",
+            "docs": [
+              "Team salary wallet — receives team_fee_bps of all revenue."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_fee_bps",
+            "docs": [
+              "Team salary split in basis points. Default: 500 (5%).",
+              "Adjustable by authority only."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "vehrzn_share_bps",
+            "docs": [
+              "Of the remaining 95%, what percentage goes to veHRZN holders.",
+              "Default: 5000 (50%). Adjustable by governance."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "reserve_lamports",
+            "docs": [
+              "Total SOL accumulated in treasury reserve (retained portion)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "revenue_index",
+            "docs": [
+              "Global revenue index for veHRZN reward tracking.",
+              "Increases each epoch by (epoch_revenue_for_vehrzn / total_vehrzn_supply)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_distributed",
+            "docs": [
+              "Total SOL distributed to veHRZN holders all time."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "last_collection_epoch",
+            "docs": [
+              "Last epoch fees were collected."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RevenueClaimState",
+      "docs": [
+        "Tracks a veHRZN holder's revenue claim state."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet this claim state belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "last_claimed_index",
+            "docs": [
+              "The revenue index at which rewards were last claimed."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_claimed",
+            "docs": [
+              "Total SOL claimed all time by this wallet."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,4114 @@
+{
+  "address": "3snPJTuZP9XHNciH7Q5KZzsvk2doxpuoYqWXf8JofEPR",
+  "metadata": {
+    "name": "rise_cdp",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Rise Protocol - CDP Program"
+  },
+  "instructions": [
+    {
+      "name": "accrue_interest",
+      "docs": [
+        "Crank: accrue interest on a position."
+      ],
+      "discriminator": [
+        47,
+        40,
+        115,
+        198,
+        91,
+        12,
+        222,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Anyone can call this crank."
+          ],
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position.collateral_mint",
+                "account": "CdpPosition"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — read for current cdp_rise_sol_minted and ceiling multiplier."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — read for staking_rise_sol_supply (ceiling denominator)."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "add_collateral",
+      "docs": [
+        "Add collateral to an existing position."
+      ],
+      "discriminator": [
+        127,
+        82,
+        121,
+        42,
+        161,
+        176,
+        249,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "borrower_collateral_account",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "borrow_more",
+      "docs": [
+        "Mint additional riseSOL against an existing open position (subject to max LTV)."
+      ],
+      "discriminator": [
+        99,
+        191,
+        157,
+        15,
+        122,
+        190,
+        25,
+        86
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from the staking program — read for exchange rate and staking supply."
+          ]
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — tracks total CDP riseSOL minted and debt ceiling."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "rise_sol_mint",
+          "docs": [
+            "The riseSOL mint — needed for the mint_for_cdp CPI."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_rise_sol_account",
+          "docs": [
+            "Borrower's riseSOL token account to receive minted tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "borrow_rewards_config",
+          "docs": [
+            "Global borrow rewards config — updated with new total_cdp_debt."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "docs": [
+            "Per-position borrow rewards — settled before debt increases."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "additional_rise_sol",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "checkpoint_borrow_rewards",
+      "docs": [
+        "Permissionless crank — advance the global reward_per_token accumulator."
+      ],
+      "discriminator": [
+        176,
+        104,
+        201,
+        148,
+        159,
+        241,
+        226,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — anyone can call this crank."
+          ],
+          "signer": true
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_borrow_rewards",
+      "docs": [
+        "Claim accumulated RISE borrow rewards for a CDP position."
+      ],
+      "discriminator": [
+        129,
+        54,
+        17,
+        184,
+        156,
+        132,
+        178,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position"
+        },
+        {
+          "name": "borrow_rewards",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower_rise_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "position_nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "close_position",
+      "docs": [
+        "Close a CDP position."
+      ],
+      "discriminator": [
+        123,
+        134,
+        81,
+        0,
+        49,
+        68,
+        98,
+        98
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_sol_mint",
+          "docs": [
+            "The riseSOL mint."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_rise_sol_account",
+          "docs": [
+            "Borrower's riseSOL account to burn from."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_collateral_account",
+          "docs": [
+            "Borrower's collateral account to return tokens to."
+          ],
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "docs": [
+            "Protocol collateral vault."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collect_cdp_fees",
+      "docs": [
+        "Sweep accumulated CDP interest fees and distribute via 5/47.5/47.5 split."
+      ],
+      "discriminator": [
+        104,
+        85,
+        2,
+        210,
+        139,
+        74,
+        33,
+        143
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — any account can trigger the sweep."
+          ],
+          "signer": true
+        },
+        {
+          "name": "cdp_fee_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "docs": [
+            "ProtocolTreasury from the staking program. Written via CPI."
+          ],
+          "writable": true
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — updated by credit_staking_revenue CPI."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_borrow_rewards",
+      "docs": [
+        "Initialize the borrow rewards config and vault. Authority only."
+      ],
+      "discriminator": [
+        69,
+        19,
+        171,
+        220,
+        213,
+        142,
+        70,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — used to verify authority."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "docs": [
+            "Token account PDA that will hold RISE for borrow rewards.",
+            "Authority is the borrow_rewards_config PDA itself."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_mint"
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "Must be the standard SPL Token program — Token-2022 is not accepted."
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch_emissions",
+          "type": "u64"
+        },
+        {
+          "name": "slots_per_epoch",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_cdp_config",
+      "docs": [
+        "Initialize the global CDP config (debt ceiling). Authority only."
+      ],
+      "discriminator": [
+        59,
+        209,
+        169,
+        191,
+        2,
+        50,
+        20,
+        5
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "debt_ceiling_multiplier_bps",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "initialize_collateral_config",
+      "docs": [
+        "Initialize a new accepted collateral type. Authority only."
+      ],
+      "discriminator": [
+        32,
+        194,
+        255,
+        158,
+        41,
+        188,
+        186,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Protocol authority — only this account can add collateral types."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collateral_config",
+          "docs": [
+            "The collateral config PDA being created."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "The collateral token mint being whitelisted."
+          ]
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_ltv_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquidation_threshold_bps",
+          "type": "u16"
+        },
+        {
+          "name": "liquidation_penalty_bps",
+          "type": "u16"
+        },
+        {
+          "name": "base_rate_bps",
+          "type": "u32"
+        },
+        {
+          "name": "rate_slope1_bps",
+          "type": "u32"
+        },
+        {
+          "name": "rate_slope2_bps",
+          "type": "u32"
+        },
+        {
+          "name": "optimal_utilization_bps",
+          "type": "u16"
+        },
+        {
+          "name": "conversion_slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "initialize_collateral_vault",
+      "docs": [
+        "Initialize the token vault for a collateral type. Authority only."
+      ],
+      "discriminator": [
+        50,
+        63,
+        54,
+        33,
+        53,
+        166,
+        24,
+        61
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collateral_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_payment_config",
+      "docs": [
+        "Initialize a payment token config (SOL, USDC, USDT, BTC, ETH). Authority only."
+      ],
+      "discriminator": [
+        38,
+        187,
+        7,
+        244,
+        201,
+        111,
+        164,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payment_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "liquidate",
+      "docs": [
+        "Liquidate an unhealthy position.",
+        "`route_plan_data` is Borsh-serialized `Vec<RoutePlanStep>` from the Jupiter quote API.",
+        "See `src/jupiter.rs` for encoding notes."
+      ],
+      "discriminator": [
+        223,
+        179,
+        226,
+        125,
+        48,
+        46,
+        39,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — any caller can trigger a valid liquidation.",
+            "Receives the trigger fee; pays rent for cdp_wsol_vault if first use."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "caller_collateral_account",
+          "docs": [
+            "Caller's collateral token account — receives the trigger fee."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_collateral_account",
+          "docs": [
+            "Borrower's collateral account — receives excess collateral if any."
+          ],
+          "writable": true
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — read for exchange rate."
+          ]
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — authority for cdp_wsol_vault; tracks total minted."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_fee_vault",
+          "docs": [
+            "CDP fee vault — receives interest portion of Jupiter swap output."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true
+        },
+        {
+          "name": "wsol_mint",
+          "docs": [
+            "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
+          ]
+        },
+        {
+          "name": "cdp_wsol_vault",
+          "docs": [
+            "Protocol WSOL buffer: receives Jupiter's WSOL output, then closed to unwrap."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "jupiter_program",
+          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+        },
+        {
+          "name": "jupiter_program_authority"
+        },
+        {
+          "name": "jupiter_event_authority"
+        },
+        {
+          "name": "jupiter_source_token",
+          "writable": true
+        },
+        {
+          "name": "jupiter_destination_token",
+          "writable": true
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "route_plan_data",
+          "type": "bytes"
+        },
+        {
+          "name": "quoted_out_amount",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "open_position",
+      "docs": [
+        "Open a new CDP position."
+      ],
+      "discriminator": [
+        135,
+        128,
+        47,
+        77,
+        15,
+        152,
+        240,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — tracks total CDP riseSOL minted and debt ceiling."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — read-only for staking_rise_sol_supply (ceiling denominator)."
+          ]
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "The collateral token mint."
+          ]
+        },
+        {
+          "name": "borrower_collateral_account",
+          "docs": [
+            "Borrower's collateral token account to transfer from."
+          ],
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "docs": [
+            "Protocol's collateral vault for this token type."
+          ],
+          "writable": true
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "rise_sol_mint",
+          "docs": [
+            "The riseSOL mint — needed for the mint_for_cdp CPI."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_rise_sol_account",
+          "docs": [
+            "Borrower's riseSOL token account to receive minted tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "borrow_rewards_config",
+          "docs": [
+            "Global borrow rewards config — updated with new total_cdp_debt."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "docs": [
+            "Per-position borrow rewards tracker — initialized here."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "collateral_amount",
+          "type": "u64"
+        },
+        {
+          "name": "rise_sol_to_mint",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "redeem_collateral_for_liquidity",
+      "docs": [
+        "Seize collateral to cover a staking pool liquidity shortfall. Permissionless.",
+        "`route_plan_data` is Borsh-serialized `Vec<RoutePlanStep>` from the Jupiter quote API;",
+        "the seized collateral is swapped → SOL and deposited into pool_vault as liquid buffer."
+      ],
+      "discriminator": [
+        24,
+        241,
+        188,
+        10,
+        242,
+        204,
+        158,
+        194
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — any caller can trigger when conditions are met.",
+            "Pays rent for cdp_wsol_vault / cdp_seizure_vault init if first use."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — read to verify the liquidity shortfall condition."
+          ],
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_seizure_vault",
+          "docs": [
+            "Intermediate holding account for seized tokens. Authority = collateral_vault",
+            "so it can sign as user_transfer_authority for Jupiter."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  115,
+                  101,
+                  105,
+                  122,
+                  117,
+                  114,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — authority for cdp_wsol_vault."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "wsol_mint",
+          "docs": [
+            "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
+          ]
+        },
+        {
+          "name": "cdp_wsol_vault",
+          "docs": [
+            "Protocol WSOL buffer: receives Jupiter's WSOL output, then closed → pool_vault."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "jupiter_program",
+          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+        },
+        {
+          "name": "jupiter_program_authority"
+        },
+        {
+          "name": "jupiter_event_authority"
+        },
+        {
+          "name": "jupiter_source_token",
+          "writable": true
+        },
+        {
+          "name": "jupiter_destination_token",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "route_plan_data",
+          "type": "bytes"
+        },
+        {
+          "name": "quoted_out_amount",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "repay_debt",
+      "docs": [
+        "Repay all or part of a CDP debt using SOL or an accepted SPL token.",
+        "For SPL token payments, `route_plan_data` is Borsh-serialized `Vec<RoutePlanStep>` from",
+        "the Jupiter quote API; it is swapped to SOL on-chain. Pass empty / 0 for native SOL."
+      ],
+      "discriminator": [
+        79,
+        200,
+        30,
+        15,
+        252,
+        22,
+        162,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payment_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payment_config.mint",
+                "account": "PaymentConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool"
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — tracks total minted; authority for cdp_wsol_vault."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_fee_vault",
+          "docs": [
+            "CDP fee vault — receives interest portion; also buffers SPL-path SOL before routing."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  102,
+                  101,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_vault",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower_collateral_account",
+          "writable": true
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "payment_mint",
+          "optional": true
+        },
+        {
+          "name": "borrower_payment_account",
+          "docs": [
+            "Borrower's payment token account — Jupiter's source for the swap."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "wsol_mint",
+          "docs": [
+            "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
+          ]
+        },
+        {
+          "name": "cdp_wsol_vault",
+          "docs": [
+            "Protocol WSOL buffer: receives Jupiter's WSOL output, then closed to unwrap."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "jupiter_program",
+          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+        },
+        {
+          "name": "jupiter_program_authority"
+        },
+        {
+          "name": "jupiter_event_authority"
+        },
+        {
+          "name": "jupiter_source_token",
+          "writable": true
+        },
+        {
+          "name": "jupiter_destination_token",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "payment_amount",
+          "type": "u64"
+        },
+        {
+          "name": "route_plan_data",
+          "type": "bytes"
+        },
+        {
+          "name": "quoted_out_amount",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "repay_debt_rise_sol",
+      "docs": [
+        "Repay all or part of a CDP debt by burning riseSOL tokens directly (1:1).",
+        "`shortfall_route_plan_data` is used on full repayment when seized collateral must be",
+        "bought back via Jupiter. Pass empty / 0 when no shortfall is expected (the common case)."
+      ],
+      "discriminator": [
+        20,
+        1,
+        98,
+        4,
+        27,
+        61,
+        88,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_sol_mint",
+          "docs": [
+            "The riseSOL mint — needed to burn tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "borrower_rise_sol_account",
+          "docs": [
+            "Borrower's riseSOL token account to burn from."
+          ],
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "docs": [
+            "Protocol collateral vault — returns tokens on full repayment."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower_collateral_account",
+          "docs": [
+            "Borrower's collateral account — receives collateral back on full repayment."
+          ],
+          "writable": true
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — tracks total CDP riseSOL minted.",
+            "Also used as PDA signer for the notify_rise_sol_burned CPI."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — updated by notify_rise_sol_burned CPI."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "docs": [
+            "Protocol treasury vault — source of SOL for collateral buyback if shortfall occurs."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "borrow_rewards_config",
+          "docs": [
+            "Global borrow rewards config — total_cdp_debt decremented on principal paydown."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "docs": [
+            "Per-position borrow rewards — settled before debt is reduced."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "payment_rise_sol",
+          "type": "u64"
+        },
+        {
+          "name": "shortfall_route_plan_data",
+          "type": "bytes"
+        },
+        {
+          "name": "shortfall_quoted_out",
+          "type": "u64"
+        },
+        {
+          "name": "shortfall_slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "update_collateral_config",
+      "docs": [
+        "Update parameters on an existing collateral config. Authority only."
+      ],
+      "discriminator": [
+        87,
+        81,
+        178,
+        108,
+        188,
+        71,
+        197,
+        125
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Protocol authority — only this account can update collateral configs."
+          ],
+          "signer": true
+        },
+        {
+          "name": "collateral_config",
+          "docs": [
+            "The collateral config to update."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "max_ltv_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "liquidation_threshold_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "liquidation_penalty_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "base_rate_bps",
+          "type": {
+            "option": "u32"
+          }
+        },
+        {
+          "name": "rate_slope1_bps",
+          "type": {
+            "option": "u32"
+          }
+        },
+        {
+          "name": "rate_slope2_bps",
+          "type": {
+            "option": "u32"
+          }
+        },
+        {
+          "name": "optimal_utilization_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "conversion_slippage_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "active",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_debt_ceiling",
+      "docs": [
+        "Update the global CDP debt ceiling multiplier. Authority or governance only."
+      ],
+      "discriminator": [
+        10,
+        106,
+        134,
+        43,
+        81,
+        8,
+        174,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "multiplier_bps",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_excess",
+      "docs": [
+        "Queue an excess collateral withdrawal."
+      ],
+      "discriminator": [
+        105,
+        150,
+        83,
+        48,
+        40,
+        91,
+        174,
+        190
+      ],
+      "accounts": [
+        {
+          "name": "borrower",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "collateral_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "borrower_collateral_account",
+          "writable": true
+        },
+        {
+          "name": "collateral_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BorrowRewards",
+      "discriminator": [
+        143,
+        156,
+        235,
+        101,
+        234,
+        26,
+        65,
+        157
+      ]
+    },
+    {
+      "name": "BorrowRewardsConfig",
+      "discriminator": [
+        224,
+        225,
+        187,
+        23,
+        102,
+        133,
+        184,
+        177
+      ]
+    },
+    {
+      "name": "CdpConfig",
+      "discriminator": [
+        42,
+        31,
+        29,
+        41,
+        209,
+        135,
+        177,
+        0
+      ]
+    },
+    {
+      "name": "CdpPosition",
+      "discriminator": [
+        64,
+        254,
+        135,
+        230,
+        41,
+        129,
+        38,
+        9
+      ]
+    },
+    {
+      "name": "CollateralConfig",
+      "discriminator": [
+        150,
+        147,
+        210,
+        201,
+        79,
+        202,
+        93,
+        49
+      ]
+    },
+    {
+      "name": "GlobalPool",
+      "discriminator": [
+        162,
+        244,
+        124,
+        37,
+        148,
+        94,
+        28,
+        50
+      ]
+    },
+    {
+      "name": "PaymentConfig",
+      "discriminator": [
+        252,
+        166,
+        185,
+        239,
+        186,
+        79,
+        212,
+        152
+      ]
+    },
+    {
+      "name": "ProtocolTreasury",
+      "discriminator": [
+        162,
+        26,
+        123,
+        61,
+        102,
+        146,
+        47,
+        73
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "CollateralNotAccepted",
+      "msg": "This collateral type is not accepted"
+    },
+    {
+      "code": 6002,
+      "name": "ExceedsMaxLtv",
+      "msg": "Borrow amount exceeds maximum LTV"
+    },
+    {
+      "code": 6003,
+      "name": "PositionHealthy",
+      "msg": "Position is healthy and cannot be liquidated"
+    },
+    {
+      "code": 6004,
+      "name": "PositionUnhealthy",
+      "msg": "Position is unhealthy and must be liquidated before withdrawal"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientExcess",
+      "msg": "Insufficient excess collateral to withdraw requested amount"
+    },
+    {
+      "code": 6006,
+      "name": "MathOverflow",
+      "msg": "Math overflow occurred"
+    },
+    {
+      "code": 6007,
+      "name": "StaleOraclePrice",
+      "msg": "Oracle price is stale"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidOraclePrice",
+      "msg": "Oracle price is invalid"
+    },
+    {
+      "code": 6009,
+      "name": "PositionClosed",
+      "msg": "Position is already closed"
+    },
+    {
+      "code": 6010,
+      "name": "InterestUpToDate",
+      "msg": "Interest accrual is up to date"
+    },
+    {
+      "code": 6011,
+      "name": "RepaymentExceedsDebt",
+      "msg": "Repayment amount exceeds outstanding debt"
+    },
+    {
+      "code": 6012,
+      "name": "PoolPaused",
+      "msg": "The pool is currently paused"
+    },
+    {
+      "code": 6013,
+      "name": "PaymentConfigInactive",
+      "msg": "This payment token is not active"
+    },
+    {
+      "code": 6014,
+      "name": "NoCdpFeesToCollect",
+      "msg": "No CDP fees accumulated to collect"
+    },
+    {
+      "code": 6015,
+      "name": "DebtCeilingExceeded",
+      "msg": "Minting would exceed the global CDP debt ceiling"
+    },
+    {
+      "code": 6016,
+      "name": "ExceedsSingleLoanCap",
+      "msg": "Loan amount exceeds the 5% single-loan cap"
+    },
+    {
+      "code": 6017,
+      "name": "LiquidityRedemptionNotNeeded",
+      "msg": "Liquidity redemption not needed — liquid buffer covers pending withdrawals"
+    },
+    {
+      "code": 6018,
+      "name": "NoRewardsToClaim",
+      "msg": "No borrow rewards available to claim"
+    },
+    {
+      "code": 6019,
+      "name": "BorrowRewardsNotInitialized",
+      "msg": "Borrow rewards not yet initialized"
+    }
+  ],
+  "types": [
+    {
+      "name": "BorrowRewards",
+      "docs": [
+        "Per-position borrow-rewards tracker.",
+        "One account per open CDP position."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Wallet that owns the linked CDP position."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "position",
+            "docs": [
+              "The CdpPosition this account tracks."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_debt",
+            "docs": [
+              "reward_per_token * debt / REWARD_SCALE at last settlement.",
+              "Subtracted when computing newly-accrued rewards."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "pending_rewards",
+            "docs": [
+              "Accumulated RISE not yet claimed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_checkpoint_slot",
+            "docs": [
+              "Slot of last settlement."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_claimed",
+            "docs": [
+              "Lifetime RISE claimed from this account."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BorrowRewardsConfig",
+      "docs": [
+        "Global borrow-rewards configuration. One account for the entire CDP program."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rise_mint",
+            "docs": [
+              "RISE token mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rewards_vault",
+            "docs": [
+              "PDA token account that holds RISE for distribution."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_per_token",
+            "docs": [
+              "Global reward accumulator: RISE earned per unit of debt (scaled by REWARD_SCALE)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "epoch_emissions",
+            "docs": [
+              "RISE tokens emitted per epoch across all borrowers combined."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "slots_per_epoch",
+            "docs": [
+              "Epoch length in slots."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_cdp_debt",
+            "docs": [
+              "Sum of rise_sol_debt_principal across all open positions."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_checkpoint_slot",
+            "docs": [
+              "Slot of last checkpoint_borrow_rewards call."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CdpConfig",
+      "docs": [
+        "Global CDP configuration. One account for the entire program."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority — can update debt ceiling."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "cdp_rise_sol_minted",
+            "docs": [
+              "Total riseSOL currently minted via CDP (principal only, not interest)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "debt_ceiling_multiplier_bps",
+            "docs": [
+              "Maximum CDP riseSOL as a multiple of staking riseSOL supply, in basis points.",
+              "Default: 30000 = 3x. Adjustable by governance."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CdpPosition",
+      "docs": [
+        "A single collateralized debt position.",
+        "One account per open CDP, owned by the borrower."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Wallet that opened this position."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "collateral_mint",
+            "docs": [
+              "Original collateral token mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "collateral_amount_original",
+            "docs": [
+              "Amount of collateral posted in original token units."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "collateral_usd_value",
+            "docs": [
+              "USD value of collateral at last update (scaled by PRICE_SCALE)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "rise_sol_debt_principal",
+            "docs": [
+              "riseSOL minted to borrower (principal)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "interest_accrued",
+            "docs": [
+              "Accumulated interest in riseSOL units."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_accrual_slot",
+            "docs": [
+              "Slot of last interest accrual."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "health_factor",
+            "docs": [
+              "Last computed health factor (scaled by RATE_SCALE).",
+              "Values below RATE_SCALE (1.0) are liquidatable."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "opened_at_slot",
+            "docs": [
+              "Slot when position was opened."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Position nonce — allows multiple positions per wallet."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "is_open",
+            "docs": [
+              "Whether position is open."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "excess_withdrawal_queued",
+            "docs": [
+              "SOL queued for excess withdrawal (in lamports)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "excess_withdrawal_available_slot",
+            "docs": [
+              "Slot after which queued withdrawal can be processed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CollateralConfig",
+      "docs": [
+        "Configuration for an accepted collateral type.",
+        "One account per collateral token, managed by governance."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "SPL token mint of the collateral asset."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pyth_price_feed",
+            "docs": [
+              "Pyth price feed account for this asset."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "max_ltv_bps",
+            "docs": [
+              "Maximum loan-to-value in basis points (e.g. 8500 = 85%)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "liquidation_threshold_bps",
+            "docs": [
+              "Health factor threshold for liquidation.",
+              "e.g. 9000 means liquidation triggered at 90% of max LTV."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "liquidation_penalty_bps",
+            "docs": [
+              "Liquidation penalty in basis points. Default: 500 (5%)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "base_rate_bps",
+            "docs": [
+              "Minimum annual interest rate in basis points (at 0% utilization)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "rate_slope1_bps",
+            "docs": [
+              "Additional annual rate added at optimal utilization (the kink).",
+              "e.g. 400 means rate goes from base_rate to base_rate+400 at optimal util."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "rate_slope2_bps",
+            "docs": [
+              "Additional annual rate added from optimal utilization to 100%.",
+              "Steep — discourages pushing past the kink."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "optimal_utilization_bps",
+            "docs": [
+              "Utilization at which rate slope steepens, in basis points.",
+              "e.g. 8000 = 80% of debt ceiling."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "conversion_slippage_bps",
+            "docs": [
+              "Slippage tolerance for DEX conversions in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "active",
+            "docs": [
+              "Whether new positions can be opened with this collateral."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "total_positions",
+            "docs": [
+              "Number of open positions using this collateral."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_collateral_entitlements",
+            "docs": [
+              "Total collateral owed back to borrowers across all positions for this token.",
+              "Incremented on deposit, decremented on return. May exceed vault balance",
+              "if some collateral was seized for liquidity — the deficit is covered by",
+              "converting from other vaults or SOL when borrowers repay."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "rise_sol_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_sol_staked",
+            "type": "u128"
+          },
+          {
+            "name": "staking_rise_sol_supply",
+            "type": "u128"
+          },
+          {
+            "name": "exchange_rate",
+            "type": "u128"
+          },
+          {
+            "name": "last_rate_update_epoch",
+            "type": "u64"
+          },
+          {
+            "name": "liquid_buffer_lamports",
+            "type": "u128"
+          },
+          {
+            "name": "liquid_buffer_target_bps",
+            "type": "u16"
+          },
+          {
+            "name": "protocol_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "pending_withdrawals_lamports",
+            "docs": [
+              "SOL committed to pending withdrawal tickets, not yet claimed."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "cdp_config_pubkey",
+            "docs": [
+              "CDP config PDA authorized to call notify_rise_sol_burned.",
+              "Set once by authority via set_cdp_config after both programs are deployed."
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PaymentConfig",
+      "docs": [
+        "Configuration for an accepted repayment token.",
+        "One account per accepted payment token (SOL, USDC, USDT, BTC, ETH).",
+        "Managed by protocol authority."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "SPL token mint for this payment token.",
+              "Use anchor_lang::solana_program::system_program::ID as a sentinel",
+              "to represent native SOL (no SPL mint)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pyth_price_feed",
+            "docs": [
+              "Pyth price feed account for USD price of this token."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "active",
+            "docs": [
+              "Whether this payment token is currently accepted."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_wallet",
+            "docs": [
+              "Team salary wallet — receives team_fee_bps of all revenue."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_fee_bps",
+            "docs": [
+              "Team salary split in basis points. Default: 500 (5%).",
+              "Adjustable by authority only."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "verise_share_bps",
+            "docs": [
+              "Of the remaining 95%, what percentage goes to veRISE holders.",
+              "Default: 5000 (50%). Adjustable by governance."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "reserve_lamports",
+            "docs": [
+              "Total SOL accumulated in treasury reserve (retained portion)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "revenue_index",
+            "docs": [
+              "Global revenue index for veRISE reward tracking.",
+              "Increases each epoch by (epoch_revenue_for_verise / total_verise_supply)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_distributed",
+            "docs": [
+              "Total SOL distributed to veRISE holders all time."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "last_collection_epoch",
+            "docs": [
+              "Last epoch fees were collected."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

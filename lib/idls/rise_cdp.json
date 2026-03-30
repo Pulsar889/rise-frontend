@@ -614,6 +614,132 @@
       ]
     },
     {
+      "name": "close_borrow_rewards",
+      "docs": [
+        "Close borrow_rewards_config and borrow_rewards_vault. Authority only.",
+        "Burns any remaining tokens in the vault before closing. Use this to",
+        "reset and re-initialize with a new RISE mint."
+      ],
+      "discriminator": [
+        4,
+        168,
+        128,
+        189,
+        159,
+        57,
+        80,
+        58
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "old_rise_mint",
+          "docs": [
+            "The old RISE mint stored in the vault — needed for the burn CPI."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_position",
       "docs": [
         "Close a CDP position."

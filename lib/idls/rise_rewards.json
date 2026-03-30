@@ -218,6 +218,58 @@
       "args": []
     },
     {
+      "name": "close_rewards_config",
+      "docs": [
+        "Close the rewards config, reclaiming rent. Authority only.",
+        "Use this to reset and re-initialize with a new RISE mint."
+      ],
+      "discriminator": [
+        131,
+        109,
+        124,
+        251,
+        153,
+        0,
+        213,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "create_gauge",
       "docs": [
         "Create a new gauge for a liquidity pool."
@@ -488,6 +540,94 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "initialize_rewards_vault",
+      "docs": [
+        "Create the RISE vault that backs LP gauge reward payouts. Authority only.",
+        "Call once after initialize_rewards."
+      ],
+      "discriminator": [
+        244,
+        175,
+        30,
+        199,
+        132,
+        140,
+        103,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "set_epoch_emissions",

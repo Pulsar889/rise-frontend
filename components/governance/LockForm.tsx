@@ -8,7 +8,7 @@ const MAX_WEEKS = 208; // 4 years
 export function LockForm() {
   const [amount, setAmount] = useState("");
   const [Weeks, setWeeks] = useState("");
-  const { lockRise, loadingLock: loading } = useGovernance();
+  const { lockRise, loadingLock: loading, riseBalance } = useGovernance();
 
   const num = parseFloat(amount) || 0;
   const WeeksNum = parseInt(Weeks) || 0;
@@ -37,7 +37,7 @@ export function LockForm() {
         token="RISE"
         value={amount}
         onChange={setAmount}
-        max={5_000} // TODO: real RISE balance
+        max={riseBalance}
       />
 
       <div>

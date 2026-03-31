@@ -16,6 +16,7 @@ import {
 } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 import { getProvider, getGovernanceProgram } from "@/lib/programs";
+import { RISE_MINT } from "@/lib/constants";
 import {
   deriveGovernanceConfig,
   deriveRiseVaultGov,
@@ -108,6 +109,8 @@ export function useGovernance() {
   // Track highest-seen nonce so new locks always get a fresh slot
   const [nextLockNonce, setNextLockNonce] = useState(0);
 
+  const [riseBalance, setRiseBalance] = useState(0);
+
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [loadingLock, setLoadingLock] = useState(false);
@@ -176,6 +179,16 @@ export function useGovernance() {
       let totalClaimableLamports = 0n;
 
       if (publicKey) {
+        // Fetch RISE token balance
+        try {
+          const riseMint = new PublicKey(RISE_MINT);
+          const riseAta = await getAssociatedTokenAddress(riseMint, publicKey);
+          const riseAccountInfo = await connection.getTokenAccountBalance(riseAta);
+          setRiseBalance(riseAccountInfo.value.uiAmount ?? 0);
+        } catch {
+          setRiseBalance(0); // ATA doesn't exist yet — user has no RISE
+        }
+
         // Layout: [8 discriminator][32 owner] → memcmp at offset 8
         const rawLocks = await (gov.account as any)["veLock"].all([
           { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
@@ -606,6 +619,7 @@ export function useGovernance() {
 
   return {
     // Reads
+    riseBalance,
     locks,
     proposals,
     gaugeVote,

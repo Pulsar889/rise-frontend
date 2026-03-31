@@ -17,6 +17,10 @@ export const RPC_ENDPOINT =
 export const RISE_SOL_MINT =
   process.env.NEXT_PUBLIC_RISE_SOL_MINT ?? "";
 
+/** RISE governance token mint. Set NEXT_PUBLIC_RISE_MINT in .env.local. */
+export const RISE_MINT =
+  process.env.NEXT_PUBLIC_RISE_MINT ?? "2TysJ9Tw5WLh7hBLmC6iZp73bm6akogYEushJEf8K49Q";
+
 export const TOKEN_SYMBOLS = {
   RISE_SOL: "riseSOL",
   RISE: "RISE",

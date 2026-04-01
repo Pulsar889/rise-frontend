@@ -39,7 +39,6 @@ export interface LpGauge {
   totalDistributed: number; // RISE distributed all time, human units
   weeklyEmission: number;   // Estimated RISE per epoch = epochEmissions * weightBps / 10000
   tvl: number;              // totalLpDeposited (proxy; no USD price feed yet)
-  apy: number;              // Estimated APY (0 until price feed available)
   lpMint: string | null;    // LP token mint — read from gauge LP vault account if initialized
   // User-specific fields (zero/null when wallet not connected or no stake)
   myDeposit: number;        // User's LP tokens in human units
@@ -198,7 +197,6 @@ export function useRewards() {
             totalDistributed:    acc.totalDistributed.toNumber() / LAMPORTS_PER_SOL,
             weeklyEmission,
             tvl:                 totalLpDepositedRaw / LAMPORTS_PER_SOL,
-            apy:                 0, // requires price feed — placeholder
             lpMint,
             myDeposit,
             claimableRise,

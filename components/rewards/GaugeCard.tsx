@@ -49,10 +49,6 @@ export function GaugeCard({ gauge }: GaugeCardProps) {
             <p className="text-xs text-[#94A3B8]">LP Gauge</p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-xl font-semibold text-emerald-400 tabular-nums">{gauge.apy}%</p>
-          <p className="text-xs text-[#94A3B8]">APY</p>
-        </div>
       </div>
 
       {/* Stats */}

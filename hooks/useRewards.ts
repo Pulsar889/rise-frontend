@@ -17,6 +17,12 @@ import {
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
 const REWARD_SCALE = 1_000_000_000_000n; // 1e12
 
+const GAUGE_META: Record<number, { name: string; poolTokens: [string, string] }> = {
+  0: { name: "riseSOL/SOL",  poolTokens: ["riseSOL", "SOL"]  },
+  1: { name: "riseSOL/USDC", poolTokens: ["riseSOL", "USDC"] },
+  2: { name: "RISE/SOL",     poolTokens: ["RISE",    "SOL"]  },
+};
+
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
 export interface LpGauge {
@@ -182,8 +188,8 @@ export function useRewards() {
             id:                  gaugePdaStr,
             pool:                poolStr,
             index,
-            name:                `Gauge #${index}`,
-            poolTokens:          ["LP", `#${index}`] as [string, string],
+            name:                (GAUGE_META[index] ?? { name: `Gauge #${index}` }).name,
+            poolTokens:          (GAUGE_META[index] ?? { poolTokens: ["LP", `#${index}`] as [string, string] }).poolTokens,
             weightBps,
             active:              acc.active as boolean,
             rewardPerToken:      rewardPerTokenBig,

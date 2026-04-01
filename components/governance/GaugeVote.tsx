@@ -1,13 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { useGovernance } from "@/hooks/useGovernance";
 
 export function GaugeVote() {
   const { gauges, setGaugeWeights, loadingGauge: loading } = useGovernance();
-  const [weights, setWeights] = useState<Record<string, number>>(
-    Object.fromEntries(gauges.map((g) => [g.id, g.myWeight]))
-  );
+  const [weights, setWeights] = useState<Record<string, number>>({});
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!initialized && gauges.length > 0) {
+      setWeights(Object.fromEntries(gauges.map((g) => [g.id, g.myWeight])));
+      setInitialized(true);
+    }
+  }, [gauges, initialized]);
 
   const total = Object.values(weights).reduce((s, w) => s + w, 0);
   const valid = Math.abs(total - 100) < 0.01;

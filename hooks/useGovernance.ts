@@ -118,6 +118,7 @@ export function useGovernance() {
   const [loadingVote, setLoadingVote] = useState<string | null>(null);
   const [loadingClaim, setLoadingClaim] = useState(false);
   const [loadingGauge, setLoadingGauge] = useState(false);
+  const [loadingProposal, setLoadingProposal] = useState(false);
 
   const wallet = useAnchorWallet();
   const { publicKey } = useWallet();
@@ -617,6 +618,48 @@ export function useGovernance() {
     }
   }, [wallet, publicKey, locks, refresh]);
 
+  /**
+   * Creates an on-chain governance proposal.
+   * @param description    Text description (max 128 bytes UTF-8)
+   * @param targetProgram  Program pubkey the proposal targets (use SystemProgram if general)
+   */
+  const createProposal = useCallback(async (description: string, targetProgram: string) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    const activeLock = locks.find((l) => l.expiresAt > new Date()) ?? locks[0];
+    if (!activeLock) throw new Error("You must lock RISE before creating a proposal");
+
+    setLoadingProposal(true);
+    try {
+      const provider  = getProvider(wallet);
+      const gov       = getGovernanceProgram(provider);
+      const configPda = deriveGovernanceConfig();
+      const config    = await (gov.account as any)["governanceConfig"].fetch(configPda);
+
+      // Encode description as [u8; 128] — pad with nulls, truncate if too long
+      const encoded = Buffer.alloc(128, 0);
+      Buffer.from(description.slice(0, 128), "utf8").copy(encoded);
+      const descBytes = Array.from(encoded) as number[];
+
+      const proposalPda = deriveProposal(config.proposalCount.toNumber());
+      const target = new PublicKey(targetProgram);
+
+      await gov.methods
+        .createProposal(descBytes, target)
+        .accounts({
+          proposer:      publicKey,
+          config:        configPda,
+          lock:          deriveVeLock(publicKey, activeLock.nonce),
+          proposal:      proposalPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      await refresh();
+    } finally {
+      setLoadingProposal(false);
+    }
+  }, [wallet, publicKey, locks, refresh]);
+
   return {
     // Reads
     riseBalance,
@@ -638,6 +681,7 @@ export function useGovernance() {
     loadingVote,
     loadingClaim,
     loadingGauge,
+    loadingProposal,
     // Transactions
     lockRise,
     unlockRise,
@@ -645,5 +689,6 @@ export function useGovernance() {
     vote,
     claimRevenue,
     setGaugeWeights,
+    createProposal,
   };
 }

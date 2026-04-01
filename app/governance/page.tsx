@@ -5,6 +5,7 @@ import { LockForm } from "@/components/governance/LockForm";
 import { LockCard } from "@/components/governance/LockCard";
 import { ProposalCard } from "@/components/governance/ProposalCard";
 import { GaugeVote } from "@/components/governance/GaugeVote";
+import { CreateProposalForm } from "@/components/governance/CreateProposalForm";
 import { useGovernance } from "@/hooks/useGovernance";
 
 export default function GovernancePage() {
@@ -67,6 +68,11 @@ export default function GovernancePage() {
 
         {/* Right column: Proposals */}
         <div className="md:col-span-2 flex flex-col gap-6">
+          <Card padding="lg">
+            <h2 className="font-semibold text-[#F1F5F9] mb-5">Create Proposal</h2>
+            <CreateProposalForm />
+          </Card>
+
           {activeProposals.length > 0 && (
             <div>
               <h2 className="font-semibold text-[#F1F5F9] mb-3">Active Proposals ({activeProposals.length})</h2>

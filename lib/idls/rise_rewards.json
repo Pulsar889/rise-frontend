@@ -241,9 +241,6 @@
         },
         {
           "name": "config",
-          "docs": [
-            "or any account at the rewards_config PDA. We verify authority above."
-          ],
           "pda": {
             "seeds": [
               {
@@ -1006,6 +1003,14 @@
             "name": "total_distributed",
             "docs": [
               "Total RISE distributed to this gauge all time."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pending_emissions",
+            "docs": [
+              "Emissions accumulated from epochs where total_lp_deposited == 0.",
+              "Added to the next epoch's allocation when deposits exist."
             ],
             "type": "u64"
           },

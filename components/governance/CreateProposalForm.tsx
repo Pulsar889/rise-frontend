@@ -1,28 +1,21 @@
 "use client";
 import { useState } from "react";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { SystemProgram } from "@solana/web3.js";
 import { useGovernance } from "@/hooks/useGovernance";
 
 export function CreateProposalForm() {
   const { createProposal, loadingProposal, locks, userVerise } = useGovernance();
 
   const [description, setDescription] = useState("");
-  const [targetProgram, setTargetProgram] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const hasActiveLock = locks.some((l) => l.expiresAt > new Date());
   const charsLeft = 128 - new TextEncoder().encode(description).length;
-  const targetValue = targetProgram.trim() || SystemProgram.programId.toBase58();
-
-  const isValidPubkey = (s: string) => {
-    try { new PublicKey(s); return true; } catch { return false; }
-  };
 
   const canSubmit =
     description.trim().length > 0 &&
     charsLeft >= 0 &&
-    (targetProgram.trim() === "" || isValidPubkey(targetProgram.trim())) &&
     hasActiveLock &&
     !loadingProposal;
 
@@ -31,10 +24,9 @@ export function CreateProposalForm() {
     setError(null);
     setSuccess(false);
     try {
-      await createProposal(description.trim(), targetValue);
+      await createProposal(description.trim(), SystemProgram.programId.toBase58());
       setSuccess(true);
       setDescription("");
-      setTargetProgram("");
     } catch (err: any) {
       setError(err?.message ?? "Transaction failed");
     }
@@ -42,7 +34,6 @@ export function CreateProposalForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* Description */}
       <div>
         <div className="flex justify-between mb-1.5">
           <label className="text-sm font-medium text-[#CBD5E1]">Description</label>
@@ -59,24 +50,6 @@ export function CreateProposalForm() {
         />
       </div>
 
-      {/* Target program */}
-      <div>
-        <label className="block text-sm font-medium text-[#CBD5E1] mb-1.5">
-          Target Program <span className="text-[#64748B] font-normal">(optional)</span>
-        </label>
-        <input
-          type="text"
-          value={targetProgram}
-          onChange={(e) => setTargetProgram(e.target.value)}
-          placeholder={SystemProgram.programId.toBase58()}
-          className="w-full rounded-lg bg-[#0F172A] border border-[#334155] text-[#F1F5F9] text-sm px-3 py-2.5 placeholder-[#475569] font-mono focus:outline-none focus:border-[#60A5FA] transition-colors"
-        />
-        <p className="text-xs text-[#64748B] mt-1">
-          The program this proposal would affect. Leave blank for general proposals.
-        </p>
-      </div>
-
-      {/* veRISE info */}
       {!hasActiveLock && (
         <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">
           You need an active veRISE lock to create proposals.

@@ -15,7 +15,7 @@ import {
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
-import { getProvider, getGovernanceProgram } from "@/lib/programs";
+import { getProvider, getGovernanceProgram, getRewardsProgram } from "@/lib/programs";
 import { RISE_MINT } from "@/lib/constants";
 import {
   deriveGovernanceConfig,
@@ -74,26 +74,18 @@ export interface GaugeVoteData {
   gauges: GaugeAllocationEntry[];
 }
 
-// Static gauge list — real data comes from rise-rewards; kept here for GaugeVote component.
-// Pool addresses will be wired when rewards program is connected.
 export interface Gauge {
-  id: string;
+  id: string;       // gauge PDA base58
+  pool: string;     // pool pubkey base58 — used when submitting gauge votes
   name: string;
-  weight: number;   // protocol weight %
+  weight: number;   // protocol weight % (from on-chain weightBps)
   myWeight: number; // user's last submitted weight %
 }
 
-const STATIC_GAUGES: Gauge[] = [
-  { id: "g-1", name: "SOL / riseSOL",  weight: 45, myWeight: 60 },
-  { id: "g-2", name: "RISE / SOL",     weight: 30, myWeight: 30 },
-  { id: "g-3", name: "riseSOL / USDC", weight: 25, myWeight: 10 },
-];
-
-// Placeholder pool pubkeys until rewards program is wired
-const GAUGE_POOL_ADDRESSES: Record<string, string> = {
-  "g-1": SystemProgram.programId.toBase58(),
-  "g-2": SystemProgram.programId.toBase58(),
-  "g-3": SystemProgram.programId.toBase58(),
+const GAUGE_NAMES: Record<number, string> = {
+  0: "riseSOL / SOL",
+  1: "riseSOL / USDC",
+  2: "RISE / SOL",
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -102,7 +94,7 @@ export function useGovernance() {
   const [locks, setLocks] = useState<VeNft[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [gaugeVote, setGaugeVote] = useState<GaugeVoteData | null>(null);
-  const [gauges] = useState<Gauge[]>(STATIC_GAUGES);
+  const [gauges, setGauges] = useState<Gauge[]>([]);
   const [totalVerise, setTotalVerise] = useState(0);
   const [claimableRevenue, setClaimableRevenue] = useState(0);
 
@@ -271,6 +263,38 @@ export function useGovernance() {
       }
 
       setLocks(mappedLocks);
+
+      // ── Gauges (from rewards program) ───────────────────────────────────────
+      try {
+        const rewardsProgram = getRewardsProgram(provider);
+        const rawGauges = await (rewardsProgram.account as any)["gauge"].all();
+
+        // Build user's last submitted weights by pool pubkey
+        const myWeightByPool: Record<string, number> = {};
+        if (gaugeVote) {
+          for (const entry of gaugeVote.gauges) {
+            myWeightByPool[entry.pool] = Math.round(entry.weightBps / 100);
+          }
+        }
+
+        const mappedGauges: Gauge[] = rawGauges
+          .sort((a: any, b: any) => a.account.index.toNumber() - b.account.index.toNumber())
+          .map((raw: any) => {
+            const index: number = raw.account.index.toNumber();
+            const pool = (raw.account.pool as PublicKey).toBase58();
+            const weightBps: number = raw.account.weightBps;
+            return {
+              id:       raw.publicKey.toBase58(),
+              pool,
+              name:     GAUGE_NAMES[index] ?? `Gauge #${index}`,
+              weight:   Math.round(weightBps / 100),
+              myWeight: myWeightByPool[pool] ?? 0,
+            };
+          });
+        setGauges(mappedGauges);
+      } catch {
+        // Rewards program not initialized — leave gauges empty
+      }
 
       // ── Proposals ───────────────────────────────────────────────────────────
       if (proposalCount === 0) {
@@ -595,8 +619,10 @@ export function useGovernance() {
           ? 10_000 - bpsSum
           : Math.round((pct / totalPct) * 10_000);
         bpsSum += bps;
+        // gaugeId is either a gauge PDA (from on-chain) or legacy static id
+        const gauge = gauges.find((g) => g.id === gaugeId);
         return {
-          pool:      new PublicKey(GAUGE_POOL_ADDRESSES[gaugeId] ?? SystemProgram.programId.toBase58()),
+          pool:      new PublicKey(gauge?.pool ?? SystemProgram.programId.toBase58()),
           weightBps: bps,
         };
       });
@@ -616,7 +642,7 @@ export function useGovernance() {
     } finally {
       setLoadingGauge(false);
     }
-  }, [wallet, publicKey, locks, refresh]);
+  }, [wallet, publicKey, locks, gauges, refresh]);
 
   /**
    * Creates an on-chain governance proposal.

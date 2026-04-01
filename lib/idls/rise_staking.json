@@ -1208,6 +1208,128 @@
           }
         }
       ]
+    },
+    {
+      "name": "withdraw_treasury_for_cdp_buyback",
+      "docs": [
+        "Called by the CDP program via CPI to fund a collateral buyback from the treasury.",
+        "Transfers `shortfall_sol` lamports from treasury_vault to the CDP's WSOL buyback vault,",
+        "which the CDP program then wraps and swaps → collateral tokens → borrower."
+      ],
+      "discriminator": [
+        248,
+        42,
+        143,
+        140,
+        51,
+        214,
+        220,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "cdp_config",
+          "docs": [
+            "CDP config PDA — must match global_pool.cdp_config_pubkey.",
+            "The CDP program signs this CPI with seeds [b\"cdp_config\"]."
+          ],
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_wsol_buyback_vault",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "shortfall_sol",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [

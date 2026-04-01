@@ -18,6 +18,8 @@ import {
   derivePaymentConfig,
   deriveCdpPosition,
   deriveCdpWsolVault,
+  deriveCdpWsolBuybackVault,
+  deriveProtocolTreasury,
   deriveJupiterEventAuthority,
 } from "@/lib/pdas";
 
@@ -400,6 +402,7 @@ export function useCdp() {
       const jupiterProgramAuthority = new PublicKey(JUPITER_PROGRAM_AUTHORITY);
       const jupiterEventAuthority   = deriveJupiterEventAuthority();
       const cdpWsolVault            = deriveCdpWsolVault();
+      const cdpWsolBuybackVault     = deriveCdpWsolBuybackVault();
       const wsolMint                = new PublicKey(WSOL_MINT);
 
       if (currency === "riseSOL") {
@@ -410,19 +413,30 @@ export function useCdp() {
         await cdp.methods
           .repayDebtRiseSol(new BN(amount), Buffer.alloc(0), new BN(0), 0)
           .accounts({
-            borrower: publicKey,
-            position:                positionPda,
+            borrower:                        publicKey,
+            position:                        positionPda,
             collateralConfig,
             riseSolMint,
             borrowerRiseSolAccount,
             collateralVault,
             borrowerCollateralAccount,
+            collateralMint,
             cdpConfig,
             globalPool,
-            treasuryVault:           deriveTreasuryVault(),
-            stakingProgram:          getProgramPublicKeys().staking,
-            tokenProgram:            TOKEN_PROGRAM_ID,
-            systemProgram:           SystemProgram.programId,
+            treasury:                        deriveProtocolTreasury(),
+            treasuryVault:                   deriveTreasuryVault(),
+            wsolMint,
+            cdpWsolBuybackVault,
+            pythPriceFeed,
+            solPriceFeed,
+            jupiterProgram,
+            jupiterProgramAuthority,
+            jupiterEventAuthority,
+            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+            stakingProgram:                  getProgramPublicKeys().staking,
+            tokenProgram:                    TOKEN_PROGRAM_ID,
+            systemProgram:                   SystemProgram.programId,
           })
           .rpc();
 
@@ -432,31 +446,35 @@ export function useCdp() {
         const paymentConfig = derivePaymentConfig(paymentMint);
 
         await cdp.methods
-          .repayDebt(new BN(amount), Buffer.alloc(0), new BN(0), 0)
+          .repayDebt(new BN(amount), Buffer.alloc(0), new BN(0), 0, Buffer.alloc(0), new BN(0), 0)
           .accounts({
-            borrower: publicKey,
-            position:                 positionPda,
+            borrower:                        publicKey,
+            position:                        positionPda,
             collateralConfig,
             paymentConfig,
             globalPool,
             cdpConfig,
-            cdpFeeVault:              deriveCdpFeeVault(),
-            poolVault:                derivePoolVault(),
+            cdpFeeVault:                     deriveCdpFeeVault(),
+            poolVault:                       derivePoolVault(),
             collateralVault,
             borrowerCollateralAccount,
+            collateralMint,
             pythPriceFeed,
             solPriceFeed,
-            paymentMint:              null as any,
-            borrowerPaymentAccount:   null as any,
+            paymentMint:                     null as any,
+            borrowerPaymentAccount:          null as any,
             wsolMint,
             cdpWsolVault,
+            cdpWsolBuybackVault,
             jupiterProgram,
             jupiterProgramAuthority,
             jupiterEventAuthority,
-            jupiterSourceToken:       cdpWsolVault,  // unused for SOL path
-            jupiterDestinationToken:  cdpWsolVault,  // unused for SOL path
-            tokenProgram:             TOKEN_PROGRAM_ID,
-            systemProgram:            SystemProgram.programId,
+            jupiterSourceToken:              cdpWsolVault,       // unused for SOL path
+            jupiterDestinationToken:         cdpWsolVault,
+            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+            tokenProgram:                    TOKEN_PROGRAM_ID,
+            systemProgram:                   SystemProgram.programId,
           })
           .rpc();
 
@@ -481,31 +499,35 @@ export function useCdp() {
         const jupiterDestToken    = route?.jupiterDestinationToken ?? cdpWsolVault;
 
         await cdp.methods
-          .repayDebt(new BN(amount), routePlanData, new BN(quotedOutAmount), 50)
+          .repayDebt(new BN(amount), routePlanData, new BN(quotedOutAmount), 50, Buffer.alloc(0), new BN(0), 0)
           .accounts({
-            borrower: publicKey,
-            position:                 positionPda,
+            borrower:                        publicKey,
+            position:                        positionPda,
             collateralConfig,
             paymentConfig,
             globalPool,
             cdpConfig,
-            cdpFeeVault:              deriveCdpFeeVault(),
-            poolVault:                derivePoolVault(),
+            cdpFeeVault:                     deriveCdpFeeVault(),
+            poolVault:                       derivePoolVault(),
             collateralVault,
             borrowerCollateralAccount,
+            collateralMint,
             pythPriceFeed,
             solPriceFeed,
             paymentMint,
             borrowerPaymentAccount,
             wsolMint,
             cdpWsolVault,
+            cdpWsolBuybackVault,
             jupiterProgram,
             jupiterProgramAuthority,
             jupiterEventAuthority,
             jupiterSourceToken,
-            jupiterDestinationToken:  jupiterDestToken,
-            tokenProgram:             TOKEN_PROGRAM_ID,
-            systemProgram:            SystemProgram.programId,
+            jupiterDestinationToken:         jupiterDestToken,
+            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+            tokenProgram:                    TOKEN_PROGRAM_ID,
+            systemProgram:                   SystemProgram.programId,
           })
           .rpc();
       }

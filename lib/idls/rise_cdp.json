@@ -2416,7 +2416,9 @@
       "docs": [
         "Repay all or part of a CDP debt using SOL or an accepted SPL token.",
         "For SPL token payments, `route_plan_data` is Borsh-serialized `Vec<RoutePlanStep>` from",
-        "the Jupiter quote API; it is swapped to SOL on-chain. Pass empty / 0 for native SOL."
+        "the Jupiter quote API; it is swapped to SOL on-chain. Pass empty / 0 for native SOL.",
+        "`shortfall_route_plan_data` is a second Jupiter route (WSOL → collateral) used only on",
+        "full repayment when collateral was previously seized. Pass empty / 0 in the common case."
       ],
       "discriminator": [
         79,
@@ -2510,7 +2512,7 @@
         {
           "name": "cdp_config",
           "docs": [
-            "Global CDP config — tracks total minted; authority for cdp_wsol_vault."
+            "Global CDP config — tracks total minted; authority for cdp_wsol_vault and cdp_wsol_buyback_vault."
           ],
           "writable": true,
           "pda": {
@@ -2605,6 +2607,12 @@
           "writable": true
         },
         {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral token mint — needed for decimal scaling in shortfall SOL computation."
+          ]
+        },
+        {
           "name": "pyth_price_feed"
         },
         {
@@ -2617,7 +2625,7 @@
         {
           "name": "borrower_payment_account",
           "docs": [
-            "Borrower's payment token account — Jupiter's source for the swap."
+            "Borrower's payment token account — Jupiter's source for the inbound swap."
           ],
           "writable": true,
           "optional": true
@@ -2625,13 +2633,13 @@
         {
           "name": "wsol_mint",
           "docs": [
-            "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
+            "Native SOL (WSOL) mint."
           ]
         },
         {
           "name": "cdp_wsol_vault",
           "docs": [
-            "Protocol WSOL buffer: receives Jupiter's WSOL output, then closed to unwrap."
+            "Protocol WSOL buffer: receives Jupiter's inbound WSOL output, then closed to unwrap."
           ],
           "writable": true,
           "pda": {
@@ -2659,6 +2667,45 @@
           }
         },
         {
+          "name": "cdp_wsol_buyback_vault",
+          "docs": [
+            "Protocol WSOL buyback vault: holds WSOL for the reverse swap (WSOL → collateral).",
+            "Only funded when a shortfall buyback is needed on full repayment."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  98,
+                  117,
+                  121,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "jupiter_program",
           "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
         },
@@ -2674,6 +2721,14 @@
         },
         {
           "name": "jupiter_destination_token",
+          "writable": true
+        },
+        {
+          "name": "shortfall_jupiter_source_token",
+          "writable": true
+        },
+        {
+          "name": "shortfall_jupiter_destination_token",
           "writable": true
         },
         {
@@ -2765,6 +2820,18 @@
         },
         {
           "name": "slippage_bps",
+          "type": "u16"
+        },
+        {
+          "name": "shortfall_route_plan_data",
+          "type": "bytes"
+        },
+        {
+          "name": "shortfall_quoted_out",
+          "type": "u64"
+        },
+        {
+          "name": "shortfall_slippage_bps",
           "type": "u16"
         }
       ]
@@ -2890,10 +2957,15 @@
           "writable": true
         },
         {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral token mint — needed for decimal scaling in shortfall SOL computation."
+          ]
+        },
+        {
           "name": "cdp_config",
           "docs": [
-            "Global CDP config — tracks total CDP riseSOL minted.",
-            "Also used as PDA signer for the notify_rise_sol_burned CPI."
+            "Global CDP config — tracks total CDP riseSOL minted; PDA signer for staking CPIs."
           ],
           "writable": true,
           "pda": {
@@ -2981,9 +3053,79 @@
           }
         },
         {
+          "name": "treasury",
+          "docs": [
+            "Protocol treasury — reserve_lamports decremented by buyback withdrawal."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
           "name": "treasury_vault",
           "docs": [
-            "Protocol treasury vault — source of SOL for collateral buyback if shortfall occurs."
+            "Protocol treasury SOL vault — source of buyback funds (shortfall path only)."
           ],
           "writable": true,
           "pda": {
@@ -3046,6 +3188,75 @@
               ]
             }
           }
+        },
+        {
+          "name": "wsol_mint",
+          "docs": [
+            "Native SOL (WSOL) mint — needed for Jupiter buyback swap."
+          ]
+        },
+        {
+          "name": "cdp_wsol_buyback_vault",
+          "docs": [
+            "Protocol WSOL buyback vault: receives treasury SOL (via staking CPI), wrapped as WSOL,",
+            "then swapped → collateral tokens → borrower. Only funded on shortfall path."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  98,
+                  117,
+                  121,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
+          "name": "jupiter_program",
+          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+        },
+        {
+          "name": "jupiter_program_authority"
+        },
+        {
+          "name": "jupiter_event_authority"
+        },
+        {
+          "name": "shortfall_jupiter_source_token",
+          "writable": true
+        },
+        {
+          "name": "shortfall_jupiter_destination_token",
+          "writable": true
         },
         {
           "name": "staking_program",

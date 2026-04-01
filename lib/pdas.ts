@@ -93,6 +93,14 @@ export function deriveCdpPosition(owner: PublicKey, nonce: number): PublicKey {
 }
 
 /** Protocol WSOL buffer — receives Jupiter's WSOL output, then closed to unwrap. */
+export function deriveCdpWsolBuybackVault(): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("cdp_wsol_buyback_vault")],
+    CDP_PROGRAM_ID
+  )[0];
+}
+
+/** Protocol WSOL buffer — receives Jupiter's WSOL output, then closed to unwrap. */
 export function deriveCdpWsolVault(): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("cdp_wsol_vault")],

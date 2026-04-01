@@ -69,10 +69,10 @@ export function GaugeVote() {
         </div>
 
         {!hasActiveLock && (
-          <p className="text-xs text-amber-600">You need an active veRISE lock to vote on gauges</p>
+          <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">You need an active veRISE lock to vote on gauges.</p>
         )}
         {hasActiveLock && !valid && (
-          <p className="text-xs text-amber-600">Weights must sum to exactly 100%</p>
+          <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">Weights must sum to exactly 100%.</p>
         )}
 
         <button

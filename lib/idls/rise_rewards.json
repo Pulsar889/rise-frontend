@@ -218,6 +218,64 @@
       "args": []
     },
     {
+      "name": "close_gauge",
+      "docs": [
+        "Close an individual Gauge account, reclaiming rent. Authority only.",
+        "Use this to clean up orphaned gauges after a config reset."
+      ],
+      "discriminator": [
+        132,
+        168,
+        52,
+        71,
+        114,
+        41,
+        129,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "or any account at the rewards_config PDA. We verify authority above."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_rewards_config",
       "docs": [
         "Close the rewards config, reclaiming rent. Authority only.",

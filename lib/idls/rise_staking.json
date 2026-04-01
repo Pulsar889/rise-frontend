@@ -562,6 +562,59 @@
       ]
     },
     {
+      "name": "migrate_global_pool",
+      "docs": [
+        "One-time migration: reallocates GlobalPool to accommodate new APY tracking fields.",
+        "Call once after deploying the updated program. Authority-only."
+      ],
+      "discriminator": [
+        113,
+        61,
+        140,
+        78,
+        202,
+        51,
+        136,
+        245
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "mint_for_cdp",
       "docs": [
         "Called by CDP program via CPI to mint riseSOL to a borrower.",
@@ -1436,6 +1489,11 @@
       "code": 6009,
       "name": "Unauthorized",
       "msg": "Caller is not authorized to perform this action"
+    },
+    {
+      "code": 6010,
+      "name": "AlreadyMigrated",
+      "msg": "GlobalPool has already been migrated to the latest size"
     }
   ],
   "types": [
@@ -1502,6 +1560,21 @@
               "Set once by authority via set_cdp_config after both programs are deployed."
             ],
             "type": "pubkey"
+          },
+          {
+            "name": "prev_exchange_rate",
+            "docs": [
+              "Exchange rate recorded at the previous `update_exchange_rate` call.",
+              "Used by the frontend to compute APY: annualize (current - prev) / prev over the slot delta."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "prev_rate_update_slot",
+            "docs": [
+              "Slot at which `prev_exchange_rate` was captured."
+            ],
+            "type": "u64"
           }
         ]
       }

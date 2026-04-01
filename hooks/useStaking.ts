@@ -16,7 +16,7 @@ export interface StakingData {
   riseSolBalance: number;   // user's riseSOL SPL token balance
   solBalance: number;       // user's native SOL balance
   exchangeRate: number;     // SOL per riseSOL (exchange_rate / 1e9)
-  apy: number;              // not stored on-chain; 0 until derived from epoch-over-epoch rate delta
+  apy: number;              // annualized % from prev_exchange_rate → exchange_rate delta
   totalStaked: number;      // total_sol_staked / LAMPORTS_PER_SOL
   myStakedSol: number;      // riseSolBalance * exchangeRate
   liquidBufferSol: number;  // liquid_buffer_lamports / LAMPORTS_PER_SOL
@@ -84,11 +84,31 @@ export function useStaking() {
         totalSolStaked: BN;
         exchangeRate: BN;
         liquidBufferLamports: BN;
+        prevExchangeRate: BN;
+        prevRateUpdateSlot: BN;
       };
 
-      const exchangeRate    = raw.exchangeRate.toNumber() / 1_000_000_000;
+      const RATE_SCALE      = 1_000_000_000;
+      const SLOTS_PER_YEAR  = 78_840_000;
+
+      const exchangeRate    = raw.exchangeRate.toNumber() / RATE_SCALE;
       const totalStaked     = raw.totalSolStaked.toNumber() / LAMPORTS_PER_SOL;
       const liquidBufferSol = raw.liquidBufferLamports.toNumber() / LAMPORTS_PER_SOL;
+
+      // APY: annualize the rate growth between the two most recent update_exchange_rate calls.
+      // Formula: ((current / prev) ^ (SLOTS_PER_YEAR / slot_delta) - 1) * 100
+      let apy = 0;
+      const prevRate = raw.prevExchangeRate.toNumber();
+      const prevSlot = raw.prevRateUpdateSlot.toNumber();
+      if (prevRate > 0 && prevSlot > 0) {
+        const currentSlot = await connection.getSlot();
+        const slotDelta = currentSlot - prevSlot;
+        if (slotDelta > 0) {
+          const rateRatio = raw.exchangeRate.toNumber() / prevRate;
+          const periodsPerYear = SLOTS_PER_YEAR / slotDelta;
+          apy = (Math.pow(rateRatio, periodsPerYear) - 1) * 100;
+        }
+      }
 
       let riseSolBalance = 0;
       let solBalance     = 0;
@@ -106,7 +126,7 @@ export function useStaking() {
         riseSolBalance,
         solBalance,
         exchangeRate,
-        apy: 0,
+        apy,
         totalStaked,
         myStakedSol:    riseSolBalance * exchangeRate,
         liquidBufferSol,

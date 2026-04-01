@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/Card";
 import { useGovernance } from "@/hooks/useGovernance";
 
 export function GaugeVote() {
-  const { gauges, setGaugeWeights, loadingGauge: loading } = useGovernance();
+  const { gauges, locks, setGaugeWeights, loadingGauge: loading } = useGovernance();
+  const hasActiveLock = locks.some((l) => l.expiresAt > new Date());
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [initialized, setInitialized] = useState(false);
 
@@ -67,13 +68,16 @@ export function GaugeVote() {
           ))}
         </div>
 
-        {!valid && (
+        {!hasActiveLock && (
+          <p className="text-xs text-amber-600">You need an active veRISE lock to vote on gauges</p>
+        )}
+        {hasActiveLock && !valid && (
           <p className="text-xs text-amber-600">Weights must sum to exactly 100%</p>
         )}
 
         <button
           onClick={handleSubmit}
-          disabled={loading || !valid}
+          disabled={loading || !valid || !hasActiveLock}
           className="w-full rounded-full bg-[#60A5FA] py-3 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Submitting…" : "Submit Gauge Votes"}

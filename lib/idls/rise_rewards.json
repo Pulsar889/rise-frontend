@@ -740,6 +740,84 @@
       ]
     },
     {
+      "name": "set_gauge_weight",
+      "docs": [
+        "Authority-only: set a gauge's weight after tallying gauge votes off-chain.",
+        "Call once per epoch for each gauge after the voting period ends."
+      ],
+      "discriminator": [
+        47,
+        239,
+        71,
+        251,
+        59,
+        149,
+        209,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "weight_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "withdraw_lp",
       "docs": [
         "User withdraws LP tokens from a gauge."
@@ -939,6 +1017,11 @@
       "code": 6006,
       "name": "InsufficientBalance",
       "msg": "Insufficient LP balance"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidWeight",
+      "msg": "Weight basis points cannot exceed 10000"
     }
   ],
   "types": [

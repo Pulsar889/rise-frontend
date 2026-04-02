@@ -30,7 +30,6 @@ export const TOKEN_SYMBOLS = {
 /** Pyth price feed IDs (hex, no 0x prefix) keyed by collateral symbol. */
 export const PYTH_FEED_IDS: Record<string, string> = {
   SOL:     "ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
-  riseSOL: "ef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d", // SOL/USD proxy
   mSOL:    "c2289a6a43d2ce91c6f55caec370f4acc38a2ed477f58813334c6d03749ff2a4",
   JitoSOL: "67be9f519b95cf24338801051f9a808eff0a578ceaaa36102453d13a72b3c87b",
   wETH:    "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",

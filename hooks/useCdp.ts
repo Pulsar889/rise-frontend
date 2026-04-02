@@ -53,7 +53,6 @@ export interface CollateralType {
 
 const MOCK_COLLATERALS: CollateralType[] = [
   { symbol: "SOL",     name: "Solana",       mint: SystemProgram.programId.toBase58(), ltv: 75, liquidationThreshold: 85, priceUsd: 182,    decimals: 9 },
-  { symbol: "riseSOL", name: "Rise SOL",     mint: RISE_SOL_MINT,                      ltv: 78, liquidationThreshold: 87, priceUsd: 197,    decimals: 9 },
   { symbol: "mSOL",    name: "Marinade SOL", mint: "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", ltv: 78, liquidationThreshold: 87, priceUsd: 195, decimals: 9 },
   { symbol: "JitoSOL", name: "Jito SOL",     mint: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn", ltv: 78, liquidationThreshold: 87, priceUsd: 190, decimals: 9 },
   { symbol: "wETH",    name: "Wrapped ETH",  mint: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", ltv: 70, liquidationThreshold: 80, priceUsd: 3_180,  decimals: 8 },

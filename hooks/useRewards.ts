@@ -17,10 +17,18 @@ import {
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
 const REWARD_SCALE = 1_000_000_000_000n; // 1e12
 
-const GAUGE_META: Record<number, { name: string }> = {
-  0: { name: "riseSOL/SOL"  },
-  1: { name: "riseSOL/USDC" },
-  2: { name: "RISE/SOL"     },
+// Mirrors makePlaceholder() in reset_rewards.mjs — seed padded to 32 bytes
+function placeholderPool(seed: string): string {
+  const buf = Buffer.alloc(32, 0);
+  Buffer.from(seed).copy(buf);
+  return Keypair.fromSeed(buf).publicKey.toBase58();
+}
+
+// Keyed by pool pubkey so gauge names are correct regardless of on-chain index
+const GAUGE_META: Record<string, { name: string }> = {
+  [placeholderPool("rise-pool-risesol-sol")]:  { name: "riseSOL/SOL"  },
+  [placeholderPool("rise-pool-risesol-usdc")]: { name: "riseSOL/USDC" },
+  [placeholderPool("rise-pool-rise-sol")]:     { name: "RISE/SOL"     },
 };
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -186,7 +194,7 @@ export function useRewards() {
             id:                  gaugePdaStr,
             pool:                poolStr,
             index,
-            name:                (GAUGE_META[index] ?? { name: `Gauge #${index}` }).name,
+            name:                (GAUGE_META[poolStr] ?? { name: `Gauge #${index}` }).name,
             weightBps,
             active:              acc.active as boolean,
             rewardPerToken:      rewardPerTokenBig,

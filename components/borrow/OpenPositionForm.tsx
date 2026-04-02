@@ -128,7 +128,7 @@ export function OpenPositionForm() {
 
       <button
         onClick={handleOpen}
-        disabled={loading || !collateral || !borrow || overLtv}
+        disabled={loading || !publicKey || !collateral || !borrow || overLtv}
         className="w-full rounded-full bg-[#60A5FA] py-3.5 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Opening…" : "Open Position"}

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { CdpPosition, useCdp } from "@/hooks/useCdp";
 import { useStaking } from "@/hooks/useStaking";
@@ -26,6 +27,7 @@ interface RepayFormProps {
 export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("SOL");
+  const { publicKey } = useWallet();
   const { repayDebt, loading, collaterals } = useCdp();
   const { data: staking } = useStaking();
 
@@ -161,7 +163,7 @@ export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
 
       <button
         onClick={handleRepay}
-        disabled={loading || !amount || num <= 0 || isOverMax}
+        disabled={loading || !publicKey || !amount || num <= 0 || isOverMax}
         className="w-full rounded-full bg-[#F1F5F9] py-3 text-sm font-semibold text-[#0F172A] hover:bg-[#CBD5E1] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Repaying…" : isConvert ? `Convert & Repay with ${currency}` : `Repay with ${currency}`}

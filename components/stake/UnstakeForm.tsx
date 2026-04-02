@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { useStaking } from "@/hooks/useStaking";
 
@@ -7,6 +8,7 @@ export function UnstakeForm() {
   const [amount, setAmount] = useState("");
   const [txError, setTxError] = useState<string | null>(null);
   const [txSuccess, setTxSuccess] = useState(false);
+  const { publicKey } = useWallet();
   const { data, loading, unstake } = useStaking();
 
   const num = parseFloat(amount) || 0;
@@ -60,7 +62,7 @@ export function UnstakeForm() {
 
       <button
         onClick={handleUnstake}
-        disabled={loading || num <= 0}
+        disabled={loading || !publicKey || num <= 0}
         className="w-full rounded-full bg-[#60A5FA] py-3.5 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Unstaking…" : "Unstake riseSOL"}

@@ -26,9 +26,9 @@ function placeholderPool(seed: string): string {
 
 // Keyed by pool pubkey so gauge names are correct regardless of on-chain index
 const GAUGE_META: Record<string, { name: string }> = {
-  [placeholderPool("rise-pool-risesol-sol")]:  { name: "riseSOL/SOL"  },
-  [placeholderPool("rise-pool-risesol-usdc")]: { name: "riseSOL/USDC" },
-  [placeholderPool("rise-pool-rise-sol")]:     { name: "RISE/SOL"     },
+  [placeholderPool("rise-pool-risesol-sol")]:  { name: "riseSOL / SOL"  },
+  [placeholderPool("rise-pool-risesol-usdc")]: { name: "riseSOL / USDC" },
+  [placeholderPool("rise-pool-rise-sol")]:     { name: "RISE / SOL"     },
 };
 
 // ── Interfaces ────────────────────────────────────────────────────────────────

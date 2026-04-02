@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { PublicKey, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { useCdp } from "@/hooks/useCdp";
 import { useStaking } from "@/hooks/useStaking";
@@ -8,8 +11,28 @@ export function OpenPositionForm() {
   const [collateral, setCollateral] = useState("");
   const [borrow, setBorrow] = useState("");
   const [selectedCollateral, setSelectedCollateral] = useState("SOL");
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
   const { collaterals, openPosition, loading } = useCdp();
   const { data: staking } = useStaking();
+  const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!publicKey || !config) { setWalletBalance(undefined); return; }
+    const mint = config.mint;
+    if (mint === SystemProgram.programId.toBase58()) {
+      // Native SOL — reserve 0.01 SOL for fees
+      connection.getBalance(publicKey).then((lamports) => {
+        setWalletBalance(Math.max(0, lamports / LAMPORTS_PER_SOL - 0.01));
+      }).catch(() => setWalletBalance(undefined));
+    } else {
+      // SPL token
+      getAssociatedTokenAddress(new PublicKey(mint), publicKey)
+        .then((ata) => connection.getTokenAccountBalance(ata))
+        .then((res) => setWalletBalance(res.value.uiAmount ?? 0))
+        .catch(() => setWalletBalance(0));
+    }
+  }, [publicKey, selectedCollateral]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const config = collaterals.find((c) => c.symbol === selectedCollateral);
   const solConfig = collaterals.find((c) => c.symbol === "SOL");
@@ -83,7 +106,7 @@ export function OpenPositionForm() {
         token={selectedCollateral}
         value={collateral}
         onChange={setCollateral}
-        max={10} // TODO: use real wallet balance
+        max={walletBalance}
       />
 
       <TokenInput

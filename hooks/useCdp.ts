@@ -238,15 +238,15 @@ export function useCdp() {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
-  /** Fetches price feed pubkeys from the on-chain collateral config. */
+  /** Fetches price feed pubkeys from the on-chain collateral config and SOL payment config. */
   async function getPriceFeeds(cdp: ReturnType<typeof getCdpProgram>, collateralMint: PublicKey) {
-    const configPda = deriveCollateralConfig(collateralMint);
-    const configData = await (cdp.account as any)["collateralConfig"].fetch(configPda);
+    const [collateralConfigData, solPaymentConfigData] = await Promise.all([
+      (cdp.account as any)["collateralConfig"].fetch(deriveCollateralConfig(collateralMint)),
+      (cdp.account as any)["paymentConfig"].fetch(derivePaymentConfig(SystemProgram.programId)),
+    ]);
     return {
-      pythPriceFeed: configData.pythPriceFeed as PublicKey,
-      // solPriceFeed stored on PaymentConfig for the native SOL payment — use
-      // the SOL payment config's feed as a proxy for the SOL/USD price.
-      solPriceFeed: configData.pythPriceFeed as PublicKey, // TODO: store sol feed separately
+      pythPriceFeed: collateralConfigData.pythPriceFeed as PublicKey,
+      solPriceFeed:  solPaymentConfigData.pythPriceFeed as PublicKey,
     };
   }
 

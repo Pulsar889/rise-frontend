@@ -82,10 +82,17 @@ export interface Gauge {
   myWeight: number; // user's last submitted weight %
 }
 
-const GAUGE_NAMES: Record<number, string> = {
-  0: "riseSOL / SOL",
-  1: "riseSOL / USDC",
-  2: "RISE / SOL",
+// Mirrors placeholderPool() in useRewards — seed padded to 32 bytes
+function placeholderPool(seed: string): string {
+  const buf = Buffer.alloc(32, 0);
+  Buffer.from(seed).copy(buf);
+  return Keypair.fromSeed(buf).publicKey.toBase58();
+}
+
+const GAUGE_NAMES: Record<string, string> = {
+  [placeholderPool("rise-pool-risesol-sol")]:  "riseSOL / SOL",
+  [placeholderPool("rise-pool-risesol-usdc")]: "riseSOL / USDC",
+  [placeholderPool("rise-pool-rise-sol")]:     "RISE / SOL",
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -286,7 +293,7 @@ export function useGovernance() {
             return {
               id:       raw.publicKey.toBase58(),
               pool,
-              name:     GAUGE_NAMES[index] ?? `Gauge #${index}`,
+              name:     GAUGE_NAMES[pool] ?? `Gauge #${index}`,
               weight:   Math.round(weightBps / 100),
               myWeight: myWeightByPool[pool] ?? 0,
             };

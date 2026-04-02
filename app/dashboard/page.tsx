@@ -74,7 +74,7 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-2 gap-6">
               <StatBox label="Exchange Rate" value={staking.exchangeRate.toFixed(4)} sub="SOL per riseSOL" />
-              <StatBox label="APY" value={`${staking.apy}%`} sub="Current rate" accent />
+              <StatBox label="APY" value={staking.apy > 0 ? `${staking.apy}%` : "—"} sub="Current rate" accent />
             </div>
             <div className="rounded-xl bg-[#1E293B] border border-[#334155] px-4 py-3 flex justify-between text-sm">
               <span className="text-[#94A3B8]">Protocol TVL</span>

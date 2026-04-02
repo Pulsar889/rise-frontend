@@ -17,10 +17,10 @@ import {
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
 const REWARD_SCALE = 1_000_000_000_000n; // 1e12
 
-const GAUGE_META: Record<number, { name: string; poolTokens: [string, string] }> = {
-  0: { name: "riseSOL/SOL",  poolTokens: ["riseSOL", "SOL"]  },
-  1: { name: "riseSOL/USDC", poolTokens: ["riseSOL", "USDC"] },
-  2: { name: "RISE/SOL",     poolTokens: ["RISE",    "SOL"]  },
+const GAUGE_META: Record<number, { name: string }> = {
+  0: { name: "riseSOL/SOL"  },
+  1: { name: "riseSOL/USDC" },
+  2: { name: "RISE/SOL"     },
 };
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -30,7 +30,6 @@ export interface LpGauge {
   pool: string;             // Pool pubkey (base58) — needed to derive LP vault PDA
   index: number;
   name: string;             // Display name — "Gauge #N" until pool metadata is available
-  poolTokens: [string, string]; // Token symbol pair — placeholder until pool registry
   weightBps: number;        // Gauge weight in bps (0–10000)
   active: boolean;
   rewardPerToken: bigint;   // u128, scaled by REWARD_SCALE (1e12)
@@ -188,7 +187,6 @@ export function useRewards() {
             pool:                poolStr,
             index,
             name:                (GAUGE_META[index] ?? { name: `Gauge #${index}` }).name,
-            poolTokens:          (GAUGE_META[index] ?? { poolTokens: ["LP", `#${index}`] as [string, string] }).poolTokens,
             weightBps,
             active:              acc.active as boolean,
             rewardPerToken:      rewardPerTokenBig,

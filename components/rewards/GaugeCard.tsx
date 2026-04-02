@@ -33,21 +33,9 @@ export function GaugeCard({ gauge }: GaugeCardProps) {
     <Card className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-2">
-            {gauge.poolTokens.map((t, i) => (
-              <div
-                key={i}
-                className="h-9 w-9 rounded-full border-2 border-[#1E293B] bg-[#334155] flex items-center justify-center text-xs font-bold text-[#94A3B8]"
-              >
-                {t[0]}
-              </div>
-            ))}
-          </div>
-          <div>
-            <p className="font-semibold text-[#F1F5F9]">{gauge.name}</p>
-            <p className="text-xs text-[#94A3B8]">LP Gauge</p>
-          </div>
+        <div>
+          <p className="font-semibold text-[#F1F5F9]">{gauge.name}</p>
+          <p className="text-xs text-[#94A3B8]">LP Gauge</p>
         </div>
       </div>
 

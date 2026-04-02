@@ -71,6 +71,7 @@ const MOCK_COLLATERALS: CollateralType[] = [
 export function useCdp() {
   const [positions, setPositions] = useState<CdpPosition[]>([]);
   const [collaterals, setCollaterals] = useState<CollateralType[]>(MOCK_COLLATERALS);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -102,7 +103,8 @@ export function useCdp() {
           })
         );
       })
-      .catch(() => {/* keep mock prices on network failure */});
+      .catch(() => {/* keep mock prices on network failure */})
+      .finally(() => setPricesLoaded(true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wallet = useAnchorWallet();
@@ -647,6 +649,7 @@ export function useCdp() {
   return {
     positions,
     collaterals,
+    pricesLoaded,
     loading,
     fetching,
     fetchError,

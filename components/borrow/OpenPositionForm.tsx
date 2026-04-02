@@ -13,7 +13,7 @@ export function OpenPositionForm() {
   const [selectedCollateral, setSelectedCollateral] = useState("SOL");
   const { connection } = useConnection();
   const { publicKey } = useWallet();
-  const { collaterals, openPosition, loading } = useCdp();
+  const { collaterals, pricesLoaded, openPosition, loading } = useCdp();
   const { data: staking } = useStaking();
   const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
 
@@ -35,8 +35,7 @@ export function OpenPositionForm() {
   }, [publicKey, selectedCollateral]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const config = collaterals.find((c) => c.symbol === selectedCollateral);
-  const solConfig = collaterals.find((c) => c.symbol === "SOL");
-  const solPriceUsd = solConfig?.priceUsd ?? 182;
+  const solPriceUsd = collaterals.find((c) => c.symbol === "SOL")?.priceUsd ?? 0;
 
   const collateralNum = parseFloat(collateral) || 0;
   const borrowNum = parseFloat(borrow) || 0;
@@ -95,8 +94,8 @@ export function OpenPositionForm() {
         <div className="rounded-xl bg-[#1E293B] border border-[#334155] px-4 py-3 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-2 text-sm">
           <div><span className="text-[#94A3B8]">Max LTV </span><span className="font-semibold text-[#F1F5F9]">{config.ltv}%</span></div>
           <div><span className="text-[#94A3B8]">Liquidation </span><span className="font-semibold text-[#F1F5F9]">{config.liquidationThreshold}%</span></div>
-          <div><span className="text-[#94A3B8]">Price </span><span className="font-semibold text-[#F1F5F9]">${config.priceUsd.toLocaleString()}</span></div>
-          <div><span className="text-[#94A3B8]">≈ SOL value </span><span className="font-semibold text-[#F1F5F9]">{collateralValueSol.toFixed(4)} SOL</span></div>
+          <div><span className="text-[#94A3B8]">Price </span><span className="font-semibold text-[#F1F5F9]">{pricesLoaded ? `$${config.priceUsd.toLocaleString()}` : "—"}</span></div>
+          <div><span className="text-[#94A3B8]">≈ SOL value </span><span className="font-semibold text-[#F1F5F9]">{pricesLoaded ? `${collateralValueSol.toFixed(4)} SOL` : "—"}</span></div>
           <div><span className="text-[#94A3B8]">Held as </span><span className="font-semibold text-[#F1F5F9]">{config.symbol}</span></div>
         </div>
       )}
@@ -114,10 +113,10 @@ export function OpenPositionForm() {
         token="riseSOL"
         value={borrow}
         onChange={setBorrow}
-        max={maxBorrow > 0 ? maxBorrow : undefined}
+        max={pricesLoaded && maxBorrow > 0 ? maxBorrow : undefined}
       />
 
-      {currentLtv > 0 && (
+      {pricesLoaded && currentLtv > 0 && (
         <div className={`rounded-xl border px-4 py-3 flex justify-between text-sm ${overLtv ? "border-red-800 bg-red-950" : "border-[#334155]"}`}>
           <span className="text-[#94A3B8]">Current LTV</span>
           <span className={`font-semibold ${overLtv ? "text-red-400" : "text-[#F1F5F9]"}`}>
@@ -128,7 +127,7 @@ export function OpenPositionForm() {
 
       <button
         onClick={handleOpen}
-        disabled={loading || !publicKey || !collateral || !borrow || overLtv}
+        disabled={loading || !publicKey || !collateral || !borrow || (pricesLoaded && overLtv)}
         className="w-full rounded-full bg-[#60A5FA] py-3.5 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Opening…" : "Open Position"}

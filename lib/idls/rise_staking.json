@@ -8,6 +8,65 @@
   },
   "instructions": [
     {
+      "name": "checkpoint_stake_rewards",
+      "docs": [
+        "Permissionless crank: advance the global staking reward accumulator."
+      ],
+      "discriminator": [
+        222,
+        40,
+        197,
+        174,
+        23,
+        213,
+        150,
+        115
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Permissionless — anyone can call this crank."
+          ],
+          "signer": true
+        },
+        {
+          "name": "stake_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "claim_revenue",
       "docs": [
         "User claims accumulated veRISE revenue share."
@@ -120,6 +179,166 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_stake_rewards",
+      "docs": [
+        "User: claim accumulated RISE staking rewards."
+      ],
+      "discriminator": [
+        107,
+        91,
+        233,
+        196,
+        211,
+        47,
+        218,
+        21
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_rewards_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake_rewards",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_rise_sol_account",
+          "docs": [
+            "riseSOL ATA — read to sync reward_debt after claim."
+          ]
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_rise_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
       "args": []
@@ -487,6 +706,145 @@
         {
           "name": "liquid_buffer_target_bps",
           "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "initialize_stake_rewards",
+      "docs": [
+        "Authority: initialize RISE staking rewards config and vault."
+      ],
+      "discriminator": [
+        71,
+        20,
+        163,
+        229,
+        168,
+        35,
+        207,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "docs": [
+            "Global staking pool — used to verify authority and seed total_staking_supply."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "docs": [
+            "Token account PDA that will hold RISE for staker rewards.",
+            "Authority is the stake_rewards_config PDA itself."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch_emissions",
+          "type": "u64"
+        },
+        {
+          "name": "slots_per_epoch",
+          "type": "u64"
         }
       ]
     },
@@ -891,6 +1249,130 @@
       ]
     },
     {
+      "name": "register_stake_rewards",
+      "docs": [
+        "User: register to receive staking RISE rewards going forward."
+      ],
+      "discriminator": [
+        229,
+        176,
+        65,
+        187,
+        176,
+        98,
+        224,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_rewards_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake_rewards",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_rise_sol_account",
+          "docs": [
+            "The user's riseSOL token account — used to read their current balance."
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "set_cdp_config",
       "docs": [
         "Authority-only: register the CDP config PDA to authorize CDP CPI calls.",
@@ -1026,6 +1508,76 @@
         {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "stake_rewards_config",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake_rewards",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1099,6 +1651,76 @@
         {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "stake_rewards_config",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake_rewards",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1426,6 +2048,32 @@
       ]
     },
     {
+      "name": "StakeRewardsConfig",
+      "discriminator": [
+        236,
+        39,
+        102,
+        221,
+        173,
+        51,
+        95,
+        181
+      ]
+    },
+    {
+      "name": "UserStakeRewards",
+      "discriminator": [
+        114,
+        54,
+        197,
+        69,
+        190,
+        212,
+        12,
+        227
+      ]
+    },
+    {
       "name": "WithdrawalTicket",
       "discriminator": [
         92,
@@ -1494,6 +2142,11 @@
       "code": 6010,
       "name": "AlreadyMigrated",
       "msg": "GlobalPool has already been migrated to the latest size"
+    },
+    {
+      "code": 6011,
+      "name": "NoRewardsToClaim",
+      "msg": "No staking rewards to claim"
     }
   ],
   "types": [
@@ -1686,6 +2339,135 @@
             "name": "bump",
             "docs": [
               "Bump seed for PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StakeRewardsConfig",
+      "docs": [
+        "Global staking-rewards configuration.",
+        "Mirrors BorrowRewardsConfig in the CDP program — same slot-based accumulator pattern."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rise_mint",
+            "docs": [
+              "RISE token mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rewards_vault",
+            "docs": [
+              "PDA token account that holds RISE for staker distribution (stored for CPI reference)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_per_token",
+            "docs": [
+              "Global accumulator: RISE earned per unit of riseSOL held (scaled by REWARD_SCALE)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "epoch_emissions",
+            "docs": [
+              "RISE tokens emitted per epoch across all stakers combined."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "slots_per_epoch",
+            "docs": [
+              "Epoch length in slots (~1 week)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_staking_supply",
+            "docs": [
+              "Current total riseSOL in staker hands — updated on every stake/unstake."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_checkpoint_slot",
+            "docs": [
+              "Slot when the accumulator was last advanced."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserStakeRewards",
+      "docs": [
+        "Per-user staking rewards tracker. One account per wallet."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Wallet that owns this tracker."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rise_sol_amount",
+            "docs": [
+              "riseSOL balance at last sync (stake / unstake / claim)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reward_debt",
+            "docs": [
+              "reward_per_token * rise_sol_amount / SCALE at last sync — used to prevent",
+              "collecting rewards for tokens held before the account was opened."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "pending_rewards",
+            "docs": [
+              "Accumulated unclaimed RISE rewards (settled on each balance change)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_claimed",
+            "docs": [
+              "Lifetime RISE claimed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
             ],
             "type": "u8"
           }

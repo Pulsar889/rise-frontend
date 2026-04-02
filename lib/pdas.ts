@@ -213,3 +213,27 @@ export function deriveRewardsVault(): PublicKey {
     REWARDS_PROGRAM_ID
   )[0];
 }
+
+// ── Staking rewards PDAs ──────────────────────────────────────────────────────
+
+export function deriveStakeRewardsConfig(): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("stake_rewards_config")],
+    STAKING_PROGRAM_ID
+  )[0];
+}
+
+export function deriveStakeRewardsVault(): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("stake_rewards_vault")],
+    STAKING_PROGRAM_ID
+  )[0];
+}
+
+/** UserStakeRewards PDA — one per wallet. */
+export function deriveUserStakeRewards(user: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("user_stake_rewards"), user.toBuffer()],
+    STAKING_PROGRAM_ID
+  )[0];
+}

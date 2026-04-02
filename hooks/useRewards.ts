@@ -2,16 +2,20 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWallet, useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, LAMPORTS_PER_SOL, Keypair } from "@solana/web3.js";
+import { PublicKey, LAMPORTS_PER_SOL, Keypair, SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
-import { getProvider, getRewardsProgram } from "@/lib/programs";
+import { getProvider, getRewardsProgram, getStakingProgram } from "@/lib/programs";
 import {
   deriveRewardsConfig,
   deriveGaugePda,
   deriveUserStake,
   deriveGaugeLpVault,
   deriveRewardsVault,
+  deriveStakeRewardsConfig,
+  deriveStakeRewardsVault,
+  deriveUserStakeRewards,
+  deriveGlobalPool,
 } from "@/lib/pdas";
 
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
@@ -66,6 +70,7 @@ export function useRewards() {
   const [gauges, setGauges] = useState<LpGauge[]>([]);
   const [userStakes, setUserStakes] = useState<UserStake[]>([]);
   const [totalClaimable, setTotalClaimable] = useState(0);
+  const [stakeClaimable, setStakeClaimable] = useState(0);
   const [epochEmissions, setEpochEmissions] = useState(0);
 
   const [fetching, setFetching] = useState(false);
@@ -214,7 +219,39 @@ export function useRewards() {
       mappedGauges.sort((a, b) => a.index - b.index);
 
       setGauges(mappedGauges);
-      setTotalClaimable(totalClaimableAccum);
+
+      // ── Staking RISE rewards ──────────────────────────────────────────────
+      let stakeClaimableAccum = 0;
+      if (publicKey) {
+        try {
+          const staking = getStakingProgram(provider);
+          const stakeConfigPda = deriveStakeRewardsConfig();
+          const stakeConfigInfo = await connection.getAccountInfo(stakeConfigPda);
+
+          if (stakeConfigInfo) {
+            const stakeConfig = await (staking.account as any)["stakeRewardsConfig"].fetch(stakeConfigPda);
+            const rewardPerToken: bigint = BigInt(stakeConfig.rewardPerToken.toString());
+
+            const userStakeRewardsPda = deriveUserStakeRewards(publicKey);
+            const userStakeInfo = await connection.getAccountInfo(userStakeRewardsPda);
+
+            if (userStakeInfo) {
+              const usr = await (staking.account as any)["userStakeRewards"].fetch(userStakeRewardsPda);
+              const riseSolAmount: bigint = BigInt(usr.riseSolAmount.toString());
+              const rewardDebt: bigint    = BigInt(usr.rewardDebt.toString());
+              const pendingRaw: bigint    = BigInt(usr.pendingRewards.toString());
+
+              const accumulated  = riseSolAmount * rewardPerToken / REWARD_SCALE;
+              const newlyAccrued = accumulated > rewardDebt ? accumulated - rewardDebt : 0n;
+              stakeClaimableAccum = Number(pendingRaw + newlyAccrued) / LAMPORTS_PER_SOL;
+            }
+          }
+        } catch {
+          // Stake rewards not yet initialized — skip
+        }
+      }
+      setStakeClaimable(stakeClaimableAccum);
+      setTotalClaimable(totalClaimableAccum + stakeClaimableAccum);
     } catch (err: any) {
       setFetchError(err?.message ?? "Failed to load rewards data");
     } finally {
@@ -361,14 +398,46 @@ export function useRewards() {
   }, [wallet, publicKey, gauges, refresh]);
 
   /**
-   * Claims RISE rewards from every gauge where the user has a positive claimable balance.
-   * Individual gauge failures are silently skipped (e.g. no rewards yet).
+   * Claims accumulated RISE staking rewards.
+   */
+  const claimStakingRewards = useCallback(async () => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+
+    const staking = getStakingProgram(getProvider(wallet));
+    const stakeConfigPda = deriveStakeRewardsConfig();
+    const stakeConfig = await (staking.account as any)["stakeRewardsConfig"].fetch(stakeConfigPda);
+    const riseMint: PublicKey = stakeConfig.riseMint as PublicKey;
+    const poolPda = deriveGlobalPool();
+    const pool = await (staking.account as any)["globalPool"].fetch(poolPda);
+
+    const userRiseSolAccount = await getAssociatedTokenAddress(pool.riseSolMint as PublicKey, publicKey);
+    const userRiseAccount    = await getAssociatedTokenAddress(riseMint, publicKey);
+
+    await staking.methods
+      .claimStakeRewards()
+      .accounts({
+        user:               publicKey,
+        pool:               poolPda,
+        stakeRewardsConfig: stakeConfigPda,
+        userStakeRewards:   deriveUserStakeRewards(publicKey),
+        userRiseSolAccount,
+        rewardsVault:       deriveStakeRewardsVault(),
+        userRiseAccount,
+        tokenProgram:       TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+  }, [wallet, publicKey]);
+
+  /**
+   * Claims RISE rewards from every gauge where the user has a positive claimable balance,
+   * plus any accumulated staking RISE rewards.
+   * Individual failures are silently skipped.
    */
   const claimAll = useCallback(async () => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
 
     const claimable = gauges.filter((g) => g.claimableRise > 0);
-    if (claimable.length === 0) return;
+    if (claimable.length === 0 && stakeClaimable === 0) return;
 
     setLoading(true);
     try {
@@ -380,6 +449,7 @@ export function useRewards() {
       const configPda       = deriveRewardsConfig();
       const vaultPda        = deriveRewardsVault();
 
+      // Claim LP gauge rewards
       for (const gauge of claimable) {
         const gaugePda = new PublicKey(gauge.id);
         const stakePda = deriveUserStake(publicKey, gaugePda);
@@ -401,11 +471,20 @@ export function useRewards() {
         }
       }
 
+      // Claim staking RISE rewards (if any)
+      if (stakeClaimable > 0) {
+        try {
+          await claimStakingRewards();
+        } catch {
+          // Not yet registered or no rewards — skip
+        }
+      }
+
       await refresh();
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, gauges, refresh]);
+  }, [wallet, publicKey, gauges, stakeClaimable, claimStakingRewards, refresh]);
 
   // Backward-compat aliases for GaugeCard which calls deposit(gaugeId, amount) / withdraw(gaugeId, amount)
   const deposit  = depositLp;
@@ -416,6 +495,7 @@ export function useRewards() {
     gauges,
     userStakes,
     totalClaimable,
+    stakeClaimable,
     epochEmissions,
     fetching,
     fetchError,
@@ -426,6 +506,7 @@ export function useRewards() {
     depositLp,
     withdrawLp,
     claimRewards,
+    claimStakingRewards,
     claimAll,
     // Backward-compat aliases
     deposit,

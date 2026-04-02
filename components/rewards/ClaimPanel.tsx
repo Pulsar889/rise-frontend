@@ -3,15 +3,18 @@ import { Card } from "@/components/ui/Card";
 import { useRewards } from "@/hooks/useRewards";
 
 export function ClaimPanel() {
-  const { totalClaimable, gauges, claimAll, loading } = useRewards();
+  const { totalClaimable, stakeClaimable, gauges, claimAll, loading } = useRewards();
+
+  const hasBreakdown = stakeClaimable > 0 || gauges.some((g) => g.claimableRise > 0);
 
   return (
     <Card goldBorder className="flex flex-col gap-5">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-xs font-medium tracking-wide text-[#94A3B8]">Total Claimable</p>
-          <p className="mt-1 text-5xl font-semibold tabular-nums text-[#60A5FA]">{totalClaimable}</p>
+          <p className="mt-1 text-5xl font-semibold tabular-nums text-[#60A5FA]">{totalClaimable.toFixed(2)}</p>
           <p className="text-base text-[#94A3B8] mt-0.5">RISE</p>
+          <p className="text-xs text-[#64748B] mt-1">From staking, borrowing, and LP rewards</p>
         </div>
         <button
           onClick={claimAll}
@@ -22,9 +25,15 @@ export function ClaimPanel() {
         </button>
       </div>
 
-      {gauges.some((g) => g.claimableRise > 0) && (
+      {hasBreakdown && (
         <div className="border-t border-[#334155] pt-4 flex flex-col gap-2">
           <p className="text-xs font-medium tracking-wide text-[#94A3B8]">Breakdown</p>
+          {stakeClaimable > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-[#64748B]">Staking</span>
+              <span className="font-medium tabular-nums">{stakeClaimable.toFixed(4)} RISE</span>
+            </div>
+          )}
           {gauges
             .filter((g) => g.claimableRise > 0)
             .map((g) => (

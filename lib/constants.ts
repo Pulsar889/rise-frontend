@@ -14,8 +14,9 @@ export const RPC_ENDPOINT =
  * At runtime this is also fetched from GlobalPool.rise_sol_mint, but the env
  * var is needed for the collateral selection UI before the pool is loaded.
  */
-export const RISE_SOL_MINT =
-  process.env.NEXT_PUBLIC_RISE_SOL_MINT ?? "";
+if (!process.env.NEXT_PUBLIC_RISE_SOL_MINT)
+  throw new Error("NEXT_PUBLIC_RISE_SOL_MINT is not set in your .env.local");
+export const RISE_SOL_MINT = process.env.NEXT_PUBLIC_RISE_SOL_MINT;
 
 /** RISE governance token mint. Set NEXT_PUBLIC_RISE_MINT in .env.local. */
 export const RISE_MINT =

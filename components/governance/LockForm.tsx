@@ -77,9 +77,13 @@ export function LockForm() {
         </div>
       </div>
 
+      {riseBalance === 0 && (
+        <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">You have no RISE to lock.</p>
+      )}
+
       <button
         onClick={handleLock}
-        disabled={loading || num <= 0 || !WeeksValid}
+        disabled={loading || num <= 0 || !WeeksValid || riseBalance === 0}
         className="w-full rounded-full bg-[#60A5FA] py-3.5 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Locking…" : "Lock RISE"}

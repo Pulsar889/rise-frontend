@@ -118,7 +118,7 @@ export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
         max={maxAmount}
       />
       {isOverMax && (
-        <p className="text-xs text-red-500 font-medium">
+        <p className="text-xs text-red-400">
           Amount exceeds your debt. Max: {maxAmount!.toFixed(4)} {currency}
         </p>
       )}

@@ -46,6 +46,7 @@ export function CreateProposalForm() {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe the proposal — what should change and why"
           rows={4}
+          maxLength={128}
           className="w-full rounded-lg bg-[#0F172A] border border-[#334155] text-[#F1F5F9] text-sm px-3 py-2.5 placeholder-[#475569] resize-none focus:outline-none focus:border-[#60A5FA] transition-colors"
         />
       </div>

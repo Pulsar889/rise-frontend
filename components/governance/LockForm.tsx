@@ -62,7 +62,7 @@ export function LockForm() {
           </span>
         </div>
         {Weeks !== "" && !WeeksValid && (
-          <p className="text-xs text-red-500 mt-1.5">Enter a value between 1 and {MAX_WEEKS} Weeks</p>
+          <p className="text-xs text-red-400 mt-1.5">Enter a value between 1 and {MAX_WEEKS} Weeks</p>
         )}
       </div>
 

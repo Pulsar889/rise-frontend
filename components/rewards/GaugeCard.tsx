@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Card } from "@/components/ui/Card";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { LpGauge, useRewards } from "@/hooks/useRewards";
@@ -13,6 +14,7 @@ type Mode = "deposit" | "withdraw" | null;
 export function GaugeCard({ gauge }: GaugeCardProps) {
   const [mode, setMode] = useState<Mode>(null);
   const [amount, setAmount] = useState("");
+  const { publicKey } = useWallet();
   const { deposit, withdraw, loading } = useRewards();
 
   function toggleMode(m: Mode) {
@@ -95,7 +97,7 @@ export function GaugeCard({ gauge }: GaugeCardProps) {
           />
           <button
             onClick={handleAction}
-            disabled={loading || !amount || parseFloat(amount) <= 0}
+            disabled={loading || !publicKey || !amount || parseFloat(amount) <= 0}
             className="w-full rounded-full bg-[#60A5FA] py-3 text-sm font-semibold text-[#F0F9FF] hover:bg-[#3B82F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Processing…" : mode === "deposit" ? "Deposit LP" : "Withdraw LP"}

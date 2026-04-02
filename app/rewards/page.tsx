@@ -6,18 +6,17 @@ import { ClaimPanel } from "@/components/rewards/ClaimPanel";
 import { useRewards } from "@/hooks/useRewards";
 
 export default function RewardsPage() {
-  const { gauges } = useRewards();
+  const { gauges, totalWeeklyEmissions } = useRewards();
 
-  const totalTvl       = gauges.reduce((s, g) => s + g.tvl, 0);
-  const myDeposits     = gauges.reduce((s, g) => s + g.myDeposit, 0);
-  const totalEmission  = gauges.reduce((s, g) => s + g.weeklyEmission, 0);
+  const totalTvl   = gauges.reduce((s, g) => s + g.tvl, 0);
+  const myDeposits = gauges.reduce((s, g) => s + g.myDeposit, 0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
       <div className="mb-8 sm:mb-10">
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#F1F5F9]">Rewards</h1>
         <p className="mt-1 text-[#94A3B8]">
-          Deposit LP tokens into gauges to earn RISE emissions
+          Earn RISE by staking, borrowing, and providing liquidity
         </p>
       </div>
 
@@ -36,9 +35,9 @@ export default function RewardsPage() {
         </Card>
         <Card>
           <StatBox
-            label="Weekly Emission"
-            value={`${(totalEmission / 1000).toFixed(0)}K`}
-            sub="RISE / week"
+            label="Weekly Emissions"
+            value={totalWeeklyEmissions > 0 ? `${(totalWeeklyEmissions / 1000).toFixed(0)}K` : "—"}
+            sub="RISE / week (all sources)"
           />
         </Card>
       </div>

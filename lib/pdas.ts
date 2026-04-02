@@ -53,6 +53,13 @@ export function deriveCdpConfig(): PublicKey {
   )[0];
 }
 
+export function deriveBorrowRewardsConfig(): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("borrow_rewards_config")],
+    CDP_PROGRAM_ID
+  )[0];
+}
+
 export function deriveCdpFeeVault(): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("cdp_fee_vault")],

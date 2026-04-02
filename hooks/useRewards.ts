@@ -16,6 +16,7 @@ import {
   deriveStakeRewardsVault,
   deriveUserStakeRewards,
   deriveGlobalPool,
+  deriveBorrowRewardsConfig,
 } from "@/lib/pdas";
 
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
@@ -72,6 +73,7 @@ export function useRewards() {
   const [totalClaimable, setTotalClaimable] = useState(0);
   const [stakeClaimable, setStakeClaimable] = useState(0);
   const [epochEmissions, setEpochEmissions] = useState(0);
+  const [totalWeeklyEmissions, setTotalWeeklyEmissions] = useState(0);
 
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -252,6 +254,27 @@ export function useRewards() {
       }
       setStakeClaimable(stakeClaimableAccum);
       setTotalClaimable(totalClaimableAccum + stakeClaimableAccum);
+
+      // ── Total protocol weekly emissions (all three sources) ───────────────
+      let stakeEmissions = 0;
+      let borrowEmissions = 0;
+      try {
+        const staking = getStakingProgram(provider);
+        const stakeConfigInfo = await connection.getAccountInfo(deriveStakeRewardsConfig());
+        if (stakeConfigInfo) {
+          const sc = await (staking.account as any)["stakeRewardsConfig"].fetch(deriveStakeRewardsConfig());
+          stakeEmissions = sc.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
+        }
+      } catch { /* not initialized */ }
+      try {
+        const cdp = (await import("@/lib/programs")).getCdpProgram(provider);
+        const borrowConfigInfo = await connection.getAccountInfo(deriveBorrowRewardsConfig());
+        if (borrowConfigInfo) {
+          const bc = await (cdp.account as any)["borrowRewardsConfig"].fetch(deriveBorrowRewardsConfig());
+          borrowEmissions = bc.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
+        }
+      } catch { /* not initialized */ }
+      setTotalWeeklyEmissions(epochEmissionsRaw / LAMPORTS_PER_SOL + stakeEmissions + borrowEmissions);
     } catch (err: any) {
       setFetchError(err?.message ?? "Failed to load rewards data");
     } finally {
@@ -497,6 +520,7 @@ export function useRewards() {
     totalClaimable,
     stakeClaimable,
     epochEmissions,
+    totalWeeklyEmissions,
     fetching,
     fetchError,
     refresh,

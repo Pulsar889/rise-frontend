@@ -177,13 +177,15 @@ export function useStaking() {
         await program.methods
           .stakeSol(new BN(solAmount * LAMPORTS_PER_SOL))
           .accounts({
-            user:              publicKey,
+            user:               publicKey,
             pool,
             poolVault,
             riseSolMint,
             userRiseSolAccount,
-            systemProgram:     SystemProgram.programId,
-            tokenProgram:      TOKEN_PROGRAM_ID,
+            systemProgram:      SystemProgram.programId,
+            tokenProgram:       TOKEN_PROGRAM_ID,
+            stakeRewardsConfig: null,
+            userStakeRewards:   null,
           })
           .preInstructions(preIx)
           .rpc();

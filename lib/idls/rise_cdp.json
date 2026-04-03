@@ -4326,6 +4326,21 @@
               "Set once by authority via set_cdp_config after both programs are deployed."
             ],
             "type": "pubkey"
+          },
+          {
+            "name": "prev_exchange_rate",
+            "docs": [
+              "Exchange rate recorded at the previous `update_exchange_rate` call.",
+              "Used by the frontend to compute APY: annualize (current - prev) / prev over the slot delta."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "prev_rate_update_slot",
+            "docs": [
+              "Slot at which `prev_exchange_rate` was captured."
+            ],
+            "type": "u64"
           }
         ]
       }

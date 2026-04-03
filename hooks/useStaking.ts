@@ -186,7 +186,7 @@ export function useStaking() {
             tokenProgram:       TOKEN_PROGRAM_ID,
             stakeRewardsConfig: null,
             userStakeRewards:   null,
-          })
+          } as any)
           .preInstructions(preIx)
           .rpc();
       } catch (txErr: any) {

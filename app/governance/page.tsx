@@ -7,8 +7,11 @@ import { ProposalCard } from "@/components/governance/ProposalCard";
 import { GaugeVote } from "@/components/governance/GaugeVote";
 import { CreateProposalForm } from "@/components/governance/CreateProposalForm";
 import { useGovernance } from "@/hooks/useGovernance";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export default function GovernancePage() {
+  const { publicKey } = useWallet();
+  const connected = !!publicKey;
   const { veRiseBalance, totalLockedRise, locks, claimableRevenue, proposals, vote, claimRevenue, unlockRise, loadingUnlock, loadingVote, loadingClaim } =
     useGovernance();
 
@@ -27,14 +30,14 @@ export default function GovernancePage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 mb-6 sm:mb-8">
         <Card>
-          <StatBox label="veRISE Balance" value={veRiseBalance.toLocaleString()} sub="Total voting power" />
+          <StatBox label="veRISE Balance" value={connected ? veRiseBalance.toLocaleString() : "—"} sub="Total voting power" />
         </Card>
         <Card>
-          <StatBox label="Total Locked RISE" value={totalLockedRise.toLocaleString()} sub={`${locks.length} position${locks.length !== 1 ? "s" : ""}`} />
+          <StatBox label="Total Locked RISE" value={connected ? totalLockedRise.toLocaleString() : "—"} sub={connected ? `${locks.length} position${locks.length !== 1 ? "s" : ""}` : undefined} />
         </Card>
         <Card>
           <div className="flex flex-col gap-3 h-full justify-between">
-            <StatBox label="Revenue Share" value={`${claimableRevenue} SOL`} sub="Claimable" />
+            <StatBox label="Revenue Share" value={connected ? `${claimableRevenue} SOL` : "—"} sub="Claimable" />
             <button
               onClick={claimRevenue}
               disabled={loadingClaim || claimableRevenue === 0}

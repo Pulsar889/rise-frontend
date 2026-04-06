@@ -9,11 +9,11 @@ import { WalletButton } from "./WalletButton";
 const nunito = Nunito({ weight: "900", subsets: ["latin"] });
 
 const NAV_LINKS = [
+  { href: "/about",      label: "About"       },
   { href: "/dashboard",  label: "Dashboard"  },
   { href: "/stake",      label: "Stake"       },
   { href: "/borrow",     label: "Borrow"      },
   { href: "/governance", label: "Governance"  },
-  { href: "/about",      label: "About"       },
   { href: "/rewards",    label: "Rewards"     },
 ];
 

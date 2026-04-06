@@ -23,7 +23,7 @@ export default function AboutPage() {
           <div className="text-2xl mb-3">⚡</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Liquid Staking</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
-            Stake SOL and receive riseSOL — a value-accruing token that grows in exchange rate
+            Stake SOL and receive riseSOL, a value-accruing token that grows in exchange rate
             as validator rewards flow in. Your balance stays fixed while its worth increases.
           </p>
         </Link>
@@ -41,7 +41,7 @@ export default function AboutPage() {
           <div className="text-2xl mb-3">🗳️</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Governance</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
-            Lock RISE tokens to receive veRISE — vote on proposals, direct liquidity emissions
+            Lock RISE tokens to receive veRISE, vote on proposals, direct liquidity emissions
             through gauge voting, and earn a share of protocol revenue.
           </p>
         </Link>

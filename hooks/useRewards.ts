@@ -389,7 +389,7 @@ export function useRewards() {
    */
   const claimRewards = useCallback(async (gaugeId: string) => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
-    const gauge = requireGauge(gaugeId);
+    requireGauge(gaugeId);
 
     setLoading(true);
     try {

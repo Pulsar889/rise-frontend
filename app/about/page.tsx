@@ -12,7 +12,7 @@ export default function AboutPage() {
         </h1>
         <p className="text-lg sm:text-xl text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
           RISE is a DeFi protocol on the Solana Blockchain that lets you compound staking
-          rewards with lending yields. Stake it, borrow against it, govern it, and earn from it.
+          rewards AND lending yields. Stake it, borrow against it, govern it, and earn from it.
         </p>
       </div>
 

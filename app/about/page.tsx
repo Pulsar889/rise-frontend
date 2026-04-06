@@ -7,8 +7,8 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="mb-16 text-center">
         <h1 className="text-4xl sm:text-6xl font-bold text-[#F1F5F9] mb-6 tracking-tight">
-          Built for <span className="text-[#60A5FA]">Solana.</span>
-          <br />Designed for everyone.
+          One Token.
+          <br /><span className="text-[#60A5FA]">Two Revenue Streams.</span>
         </h1>
         <p className="text-lg sm:text-xl text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
           RISE is a DeFi protocol on the Solana Blockchain that lets you compound staking

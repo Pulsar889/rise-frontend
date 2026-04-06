@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/stake",      label: "Stake"       },
   { href: "/borrow",     label: "Borrow"      },
   { href: "/governance", label: "Governance"  },
+  { href: "/about",      label: "About"       },
   { href: "/rewards",    label: "Rewards"     },
 ];
 
@@ -25,7 +26,7 @@ export function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-4">
 
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setMenuOpen(false)}>
+        <Link href="/about" className="flex items-center gap-2.5" onClick={() => setMenuOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Rise" width={36} height={36} className="rounded-full" />
           <span className={`${nunito.className} text-xl sm:text-2xl tracking-widest uppercase text-[#60A5FA]`}>Rise</span>

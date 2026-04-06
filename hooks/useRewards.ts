@@ -509,6 +509,45 @@ export function useRewards() {
     }
   }, [wallet, publicKey, gauges, stakeClaimable, claimStakingRewards, refresh]);
 
+  /**
+   * Creates the LP token vault for a gauge. Authority only.
+   * Must be called once after `create_gauge` before any user can deposit LP tokens.
+   * @param gaugeId  Gauge PDA address (base58)
+   * @param lpMint   LP token mint address for this pool (base58)
+   */
+  const initializeGaugeLpVault = useCallback(async (gaugeId: string, lpMint: string) => {
+    if (!wallet || !publicKey) throw new Error("Wallet not connected");
+
+    setLoading(true);
+    try {
+      const provider  = getProvider(wallet);
+      const rewards   = getRewardsProgram(provider);
+      const gaugePda  = new PublicKey(gaugeId);
+      const lpMintKey = new PublicKey(lpMint);
+
+      // Derive gauge.pool from on-chain account to get the vault PDA
+      const gaugeAcc = await (rewards.account as any)["gauge"].fetch(gaugePda);
+      const pool     = gaugeAcc.pool as PublicKey;
+
+      await rewards.methods
+        .initializeGaugeLpVault()
+        .accounts({
+          authority:    publicKey,
+          config:       deriveRewardsConfig(),
+          gauge:        gaugePda,
+          lpMint:       lpMintKey,
+          gaugeLpVault: deriveGaugeLpVault(pool),
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: (await import("@solana/web3.js")).SystemProgram.programId,
+        })
+        .rpc();
+
+      await refresh();
+    } finally {
+      setLoading(false);
+    }
+  }, [wallet, publicKey, refresh]);
+
   // Backward-compat aliases for GaugeCard which calls deposit(gaugeId, amount) / withdraw(gaugeId, amount)
   const deposit  = depositLp;
   const withdraw = withdrawLp;
@@ -532,6 +571,7 @@ export function useRewards() {
     claimRewards,
     claimStakingRewards,
     claimAll,
+    initializeGaugeLpVault,
     // Backward-compat aliases
     deposit,
     withdraw,

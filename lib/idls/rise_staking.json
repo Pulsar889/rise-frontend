@@ -67,123 +67,6 @@
       "args": []
     },
     {
-      "name": "claim_revenue",
-      "docs": [
-        "User claims accumulated veRISE revenue share."
-      ],
-      "discriminator": [
-        4,
-        22,
-        151,
-        70,
-        183,
-        79,
-        73,
-        189
-      ],
-      "accounts": [
-        {
-          "name": "user",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "claim_state",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  118,
-                  101,
-                  110,
-                  117,
-                  101,
-                  95,
-                  99,
-                  108,
-                  97,
-                  105,
-                  109
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "user"
-              }
-            ]
-          }
-        },
-        {
-          "name": "treasury",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "verise_balance_account"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "claim_stake_rewards",
       "docs": [
         "User: claim accumulated RISE staking rewards."
@@ -418,6 +301,130 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_stake_rewards",
+      "docs": [
+        "Authority: close the stake rewards config and vault, burning any remaining RISE.",
+        "Use this before re-initializing with a new RISE mint."
+      ],
+      "discriminator": [
+        197,
+        197,
+        118,
+        168,
+        234,
+        120,
+        32,
+        245
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "stake_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_rise_account",
+          "docs": [
+            "Authority's RISE token account — receives the returned tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
       "args": []
@@ -1885,6 +1892,99 @@
       ]
     },
     {
+      "name": "withdraw_reserve",
+      "docs": [
+        "Authority: withdraw accumulated reserve SOL from treasury_vault to any destination."
+      ],
+      "discriminator": [
+        165,
+        158,
+        228,
+        5,
+        114,
+        119,
+        194,
+        14
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "withdraw_treasury_for_cdp_buyback",
       "docs": [
         "Called by the CDP program via CPI to fund a collateral buyback from the treasury.",
@@ -2032,19 +2132,6 @@
         146,
         47,
         73
-      ]
-    },
-    {
-      "name": "RevenueClaimState",
-      "discriminator": [
-        4,
-        193,
-        29,
-        154,
-        136,
-        139,
-        221,
-        134
       ]
     },
     {
@@ -2295,45 +2382,6 @@
               "Last epoch fees were collected."
             ],
             "type": "u64"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "Bump seed for PDA."
-            ],
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "RevenueClaimState",
-      "docs": [
-        "Tracks a veRISE holder's revenue claim state."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "docs": [
-              "The wallet this claim state belongs to."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "last_claimed_index",
-            "docs": [
-              "The revenue index at which rewards were last claimed."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "total_claimed",
-            "docs": [
-              "Total SOL claimed all time by this wallet."
-            ],
-            "type": "u128"
           },
           {
             "name": "bump",

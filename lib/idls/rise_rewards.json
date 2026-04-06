@@ -534,6 +534,316 @@
       ]
     },
     {
+      "name": "force_withdraw_lp",
+      "docs": [
+        "Authority-only: force-refund a depositor's LP tokens and pending RISE rewards.",
+        "Use this to clear out a gauge before closing it."
+      ],
+      "discriminator": [
+        87,
+        107,
+        117,
+        0,
+        86,
+        34,
+        66,
+        229
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_stake",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user_stake.owner",
+                "account": "UserStake"
+              },
+              {
+                "kind": "account",
+                "path": "gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "depositor",
+          "docs": [
+            "Verified via user_stake.owner."
+          ],
+          "writable": true
+        },
+        {
+          "name": "user_lp_account",
+          "docs": [
+            "Depositor's LP token account — receives the returned LP tokens."
+          ],
+          "writable": true
+        },
+        {
+          "name": "user_rise_account",
+          "docs": [
+            "Depositor's RISE token account — receives any pending rewards."
+          ],
+          "writable": true
+        },
+        {
+          "name": "gauge_lp_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101,
+                  95,
+                  108,
+                  112,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_gauge_lp_vault",
+      "docs": [
+        "Creates the LP token vault for a gauge. Must be called once after `create_gauge`."
+      ],
+      "discriminator": [
+        9,
+        92,
+        211,
+        35,
+        104,
+        176,
+        68,
+        252
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "gauge",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lp_mint",
+          "docs": [
+            "The LP token mint for this pool. The vault will only accept this token."
+          ]
+        },
+        {
+          "name": "gauge_lp_vault",
+          "docs": [
+            "The vault that holds staked LP tokens for this gauge.",
+            "Authority is the vault PDA itself — matches the signing pattern in withdraw_lp."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  117,
+                  103,
+                  101,
+                  95,
+                  108,
+                  112,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "gauge.pool",
+                "account": "Gauge"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize_rewards",
       "docs": [
         "Initialize the rewards program."
@@ -1022,6 +1332,11 @@
       "code": 6007,
       "name": "InvalidWeight",
       "msg": "Weight basis points cannot exceed 10000"
+    },
+    {
+      "code": 6008,
+      "name": "GaugeHasActiveDeposits",
+      "msg": "Gauge still has active LP deposits — all users must withdraw before closing"
     }
   ],
   "types": [

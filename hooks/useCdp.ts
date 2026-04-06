@@ -6,7 +6,7 @@ import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 import { getProvider, getCdpProgram, getStakingProgram, getProgramPublicKeys } from "@/lib/programs";
-import { RISE_SOL_MINT, PYTH_FEED_IDS, PYTH_HERMES_URL, JUPITER_PROGRAM_ID, JUPITER_PROGRAM_AUTHORITY, WSOL_MINT } from "@/lib/constants";
+import { PYTH_FEED_IDS, PYTH_HERMES_URL, JUPITER_PROGRAM_ID, JUPITER_PROGRAM_AUTHORITY, WSOL_MINT } from "@/lib/constants";
 import {
   deriveGlobalPool,
   derivePoolVault,

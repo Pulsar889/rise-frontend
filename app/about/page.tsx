@@ -63,8 +63,8 @@ export default function AboutPage() {
         <p className="text-[#94A3B8] leading-relaxed mb-4">
           Every part of Rise reinforces the others. Staking generates riseSOL, which backs
           CDP borrowing. Interest paid by borrowers flows back to stakers, raising the riseSOL
-          exchange rate. Protocol fees are split between the team, a reserve, and veRISE holders —
-          so governance participants are directly rewarded for keeping the system healthy.
+          exchange rate. Protocol fees are allocated to veRISE holders, so governance
+          participants are directly rewarded for keeping the system healthy.
         </p>
         <p className="text-[#94A3B8] leading-relaxed">
           The result is a self-reinforcing flywheel: more stakers means more liquidity,

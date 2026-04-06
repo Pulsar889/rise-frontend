@@ -19,41 +19,41 @@ export default function AboutPage() {
       {/* Feature cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
 
-        <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6">
+        <Link href="/stake" className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6 hover:border-[#60A5FA] transition-colors">
           <div className="text-2xl mb-3">⚡</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Liquid Staking</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
             Stake SOL and receive riseSOL — a value-accruing token that grows in exchange rate
             as validator rewards flow in. Your balance stays fixed while its worth increases.
           </p>
-        </div>
+        </Link>
 
-        <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6">
+        <Link href="/borrow" className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6 hover:border-[#60A5FA] transition-colors">
           <div className="text-2xl mb-3">🏦</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Borrow</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
             Deposit collateral and borrow riseSOL without selling your assets. A kinked interest
             rate model keeps borrowing costs predictable and the system solvent.
           </p>
-        </div>
+        </Link>
 
-        <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6">
+        <Link href="/governance" className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6 hover:border-[#60A5FA] transition-colors">
           <div className="text-2xl mb-3">🗳️</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Governance</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
             Lock RISE tokens to receive veRISE — vote on proposals, direct liquidity emissions
             through gauge voting, and earn a share of protocol revenue.
           </p>
-        </div>
+        </Link>
 
-        <div className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6">
+        <Link href="/rewards" className="bg-[#1E293B] border border-[#334155] rounded-2xl p-6 hover:border-[#60A5FA] transition-colors">
           <div className="text-2xl mb-3">🌱</div>
           <h2 className="text-lg font-semibold text-[#F1F5F9] mb-2">Rewards</h2>
           <p className="text-[#94A3B8] text-sm leading-relaxed">
             Provide liquidity to Rise-paired pools and stake your LP tokens to earn RISE
             emissions. Gauges distribute rewards weekly based on veRISE votes.
           </p>
-        </div>
+        </Link>
 
       </div>
 

@@ -11,8 +11,8 @@ export default function AboutPage() {
           <br />Designed for everyone.
         </h1>
         <p className="text-lg sm:text-xl text-[#94A3B8] max-w-2xl mx-auto leading-relaxed">
-          Rise Protocol is a fully on-chain DeFi stack that lets you put your SOL to work —
-          stake it, borrow against it, govern it, and earn from it.
+          RISE is a DeFi protocol on the Solana Blockchain that lets you compound staking
+          rewards with lending yields. Stake it, borrow against it, govern it, and earn from it.
         </p>
       </div>
 

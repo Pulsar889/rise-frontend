@@ -313,7 +313,16 @@
           }
         },
         {
+          "name": "pyth_price_feed"
+        },
+        {
           "name": "sol_price_feed"
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral mint — needed for decimal scaling when recomputing collateral USD value."
+          ]
         },
         {
           "name": "rise_sol_mint",
@@ -858,8 +867,136 @@
           }
         },
         {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — cdp_rise_sol_minted decremented; PDA signs notify CPI."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from staking — updated by notify_rise_sol_burned CPI."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "staking_program",
+          "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
+        },
+        {
           "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "borrow_rewards_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -914,15 +1051,163 @@
           }
         },
         {
+          "name": "cdp_config",
+          "docs": [
+            "CDP config PDA — signs the register_external_revenue CPI."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "treasury",
           "docs": [
             "ProtocolTreasury from the staking program. Written via CPI."
           ],
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "treasury_vault",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "global_pool",
@@ -1638,13 +1923,6 @@
           }
         },
         {
-          "name": "caller_collateral_account",
-          "docs": [
-            "Caller's collateral token account — receives the trigger fee."
-          ],
-          "writable": true
-        },
-        {
           "name": "borrower_collateral_account",
           "docs": [
             "Borrower's collateral account — receives excess collateral if any."
@@ -1714,7 +1992,63 @@
         },
         {
           "name": "pool_vault",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "wsol_mint",
@@ -2362,6 +2696,12 @@
           }
         },
         {
+          "name": "pyth_price_feed"
+        },
+        {
+          "name": "sol_price_feed"
+        },
+        {
           "name": "staking_program",
           "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
         },
@@ -2566,7 +2906,63 @@
         },
         {
           "name": "pool_vault",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "collateral_vault",
@@ -3558,6 +3954,7 @@
         },
         {
           "name": "collateral_config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -3856,6 +4253,21 @@
       "code": 6019,
       "name": "BorrowRewardsNotInitialized",
       "msg": "Borrow rewards not yet initialized"
+    },
+    {
+      "code": 6020,
+      "name": "InsufficientPriceConfidence",
+      "msg": "Oracle price confidence interval is too wide"
+    },
+    {
+      "code": 6021,
+      "name": "CollateralShortfall",
+      "msg": "Collateral shortfall exists — provide a buyback route to complete repayment"
+    },
+    {
+      "code": 6022,
+      "name": "Unauthorized",
+      "msg": "Caller is not authorized for this operation"
     }
   ],
   "types": [
@@ -4339,6 +4751,14 @@
             "name": "prev_rate_update_slot",
             "docs": [
               "Slot at which `prev_exchange_rate` was captured."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "unstake_nonce",
+            "docs": [
+              "Auto-incrementing counter used to seed withdrawal ticket PDAs.",
+              "Removes the need for the caller to supply a nonce."
             ],
             "type": "u64"
           }

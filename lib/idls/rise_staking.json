@@ -273,7 +273,42 @@
         },
         {
           "name": "ticket",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  95,
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "ticket.nonce",
+                "account": "WithdrawalTicket"
+              }
+            ]
+          }
         },
         {
           "name": "pool_vault",
@@ -1206,12 +1241,35 @@
       ],
       "accounts": [
         {
-          "name": "caller",
+          "name": "cdp_config",
           "docs": [
-            "Authorized caller — in practice this will be the CDP program's",
-            "cdp_fee_vault PDA signing via CPI invoke_signed."
+            "CDP config PDA — must match global_pool.cdp_config_pubkey.",
+            "The CDP program signs this CPI with its cdp_config PDA seeds [b\"cdp_config\"]."
           ],
           "signer": true
+        },
+        {
+          "name": "global_pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "treasury",
@@ -1641,7 +1699,42 @@
         },
         {
           "name": "ticket",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  95,
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "pool.unstake_nonce",
+                "account": "GlobalPool"
+              }
+            ]
+          }
         },
         {
           "name": "rise_sol_mint",
@@ -1734,10 +1827,6 @@
         {
           "name": "rise_sol_amount",
           "type": "u64"
-        },
-        {
-          "name": "nonce",
-          "type": "u8"
         }
       ]
     },
@@ -2315,6 +2404,14 @@
               "Slot at which `prev_exchange_rate` was captured."
             ],
             "type": "u64"
+          },
+          {
+            "name": "unstake_nonce",
+            "docs": [
+              "Auto-incrementing counter used to seed withdrawal ticket PDAs.",
+              "Removes the need for the caller to supply a nonce."
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -2447,7 +2544,10 @@
           {
             "name": "total_staking_supply",
             "docs": [
-              "Current total riseSOL in staker hands — updated on every stake/unstake."
+              "Total riseSOL held by *staking-origin* depositors — updated on every stake/unstake.",
+              "IMPORTANT: This tracks only riseSOL minted via stake_sol. It does NOT include",
+              "CDP-minted riseSOL (tracked separately in CdpConfig.cdp_rise_sol_minted) and",
+              "must never be used as a proxy for total riseSOL supply."
             ],
             "type": "u64"
           },
@@ -2555,9 +2655,9 @@
           {
             "name": "nonce",
             "docs": [
-              "Nonce — allows multiple outstanding tickets per wallet."
+              "Global nonce from GlobalPool.unstake_nonce — used to derive this ticket's PDA."
             ],
-            "type": "u8"
+            "type": "u64"
           },
           {
             "name": "bump",

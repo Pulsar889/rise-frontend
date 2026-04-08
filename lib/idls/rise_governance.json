@@ -84,7 +84,7 @@
               },
               {
                 "kind": "account",
-                "path": "voter"
+                "path": "lock"
               },
               {
                 "kind": "account",
@@ -157,23 +157,196 @@
           "writable": true
         },
         {
-          "name": "treasury"
+          "name": "treasury",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "treasury_vault",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
+      "args": []
+    },
+    {
+      "name": "close_proposal",
+      "discriminator": [
+        213,
+        178,
+        139,
+        19,
+        50,
+        191,
+        82,
+        245
+      ],
+      "accounts": [
         {
-          "name": "treasury_vault_bump",
-          "type": "u8"
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "proposal",
+          "writable": true
         }
-      ]
+      ],
+      "args": []
     },
     {
       "name": "create_proposal",
@@ -295,6 +468,7 @@
         },
         {
           "name": "config",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -771,6 +945,80 @@
       ]
     },
     {
+      "name": "migrate_governance_config",
+      "docs": [
+        "One-time devnet migration: reallocs governance_config 147 → 155 bytes.",
+        "Safe to leave in production — it checks current size == 147 and will",
+        "no-op (fail) on an already-migrated account."
+      ],
+      "discriminator": [
+        145,
+        83,
+        77,
+        211,
+        212,
+        48,
+        98,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Must match the authority stored in the account."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "docs": [
+            "Pays rent top-up (8 extra bytes)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "is still in the old 147-byte layout."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "unlock_rise",
       "discriminator": [
         246,
@@ -1082,6 +1330,19 @@
       ]
     },
     {
+      "name": "ProtocolTreasury",
+      "discriminator": [
+        162,
+        26,
+        123,
+        61,
+        102,
+        146,
+        47,
+        73
+      ]
+    },
+    {
       "name": "VeLock",
       "discriminator": [
         103,
@@ -1183,6 +1444,26 @@
       "code": 6014,
       "name": "AlreadyVoted",
       "msg": "Already voted on this proposal"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidConfig",
+      "msg": "Invalid governance config parameter"
+    },
+    {
+      "code": 6016,
+      "name": "TransferAmountMismatch",
+      "msg": "Vault did not receive the expected token amount"
+    },
+    {
+      "code": 6017,
+      "name": "TooManyActiveProposals",
+      "msg": "Maximum number of active proposals (10) already reached"
+    },
+    {
+      "code": 6018,
+      "name": "Unauthorized",
+      "msg": "Unauthorized caller"
     }
   ],
   "types": [
@@ -1294,6 +1575,13 @@
             "type": "u64"
           },
           {
+            "name": "active_proposal_count",
+            "docs": [
+              "Number of proposals that are still open (not yet executed or closed)."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -1348,6 +1636,80 @@
           },
           {
             "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Protocol authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_wallet",
+            "docs": [
+              "Team salary wallet — receives team_fee_bps of all revenue."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_fee_bps",
+            "docs": [
+              "Team salary split in basis points. Default: 500 (5%).",
+              "Adjustable by authority only."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "verise_share_bps",
+            "docs": [
+              "Of the remaining 95%, what percentage goes to veRISE holders.",
+              "Default: 5000 (50%). Adjustable by governance."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "reserve_lamports",
+            "docs": [
+              "Total SOL accumulated in treasury reserve (retained portion)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "revenue_index",
+            "docs": [
+              "Global revenue index for veRISE reward tracking.",
+              "Increases each epoch by (epoch_revenue_for_verise / total_verise_supply)."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_distributed",
+            "docs": [
+              "Total SOL distributed to veRISE holders all time."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "last_collection_epoch",
+            "docs": [
+              "Last epoch fees were collected."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for PDA."
+            ],
             "type": "u8"
           }
         ]
@@ -1418,6 +1780,10 @@
         "fields": [
           {
             "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "lock",
             "type": "pubkey"
           },
           {

@@ -299,6 +299,7 @@ export function useCdp() {
           collateralMint,
           borrowerCollateralAccount,
           collateralVault,
+          solPaymentConfig:          derivePaymentConfig(SystemProgram.programId),
           pythPriceFeed,
           solPriceFeed,
           riseSolMint,
@@ -424,6 +425,7 @@ export function useCdp() {
             collateralMint,
             cdpConfig,
             globalPool,
+            poolVault:                       derivePoolVault(),
             treasury:                        deriveProtocolTreasury(),
             treasuryVault:                   deriveTreasuryVault(),
             wsolMint,
@@ -552,7 +554,7 @@ export function useCdp() {
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
       const globalPool     = deriveGlobalPool();
       const riseSolMint    = await getRiseSolMint(staking);
-      const { solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
       const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
       await cdp.methods
@@ -563,6 +565,8 @@ export function useCdp() {
           collateralConfig:       deriveCollateralConfig(collateralMint),
           globalPool,
           cdpConfig:              deriveCdpConfig(),
+          solPaymentConfig:       derivePaymentConfig(SystemProgram.programId),
+          pythPriceFeed,
           solPriceFeed,
           riseSolMint,
           borrowerRiseSolAccount,
@@ -599,6 +603,7 @@ export function useCdp() {
           collateralMint,
           borrowerCollateralAccount,
           collateralVault:          deriveCollateralVault(collateralMint),
+          solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
           pythPriceFeed,
           solPriceFeed,
           tokenProgram:             TOKEN_PROGRAM_ID,
@@ -636,6 +641,7 @@ export function useCdp() {
           collateralMint,
           borrowerCollateralAccount,
           collateralVault:          deriveCollateralVault(collateralMint),
+          solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
           pythPriceFeed,
           solPriceFeed,
           tokenProgram:             TOKEN_PROGRAM_ID,

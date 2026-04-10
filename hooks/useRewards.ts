@@ -116,7 +116,11 @@ export function useRewards() {
       setEpochEmissions(epochEmissionsRaw / LAMPORTS_PER_SOL);
 
       // ── All Gauge accounts ──────────────────────────────────────────────────
-      const rawGauges = await (rewards.account as any)["gauge"].all();
+      // Filter to gauges belonging to the current config (index < gauge_count).
+      // Orphaned gauge accounts from previous reset runs are excluded this way.
+      const gaugeCount: number = config.gaugeCount.toNumber();
+      const rawGauges = ((await (rewards.account as any)["gauge"].all()) as any[])
+        .filter((raw: any) => raw.account.index.toNumber() < gaugeCount);
 
       // ── UserStake accounts for connected wallet ─────────────────────────────
       // Layout: [8 discriminator][32 owner][32 gauge] → memcmp at offset 8 for owner

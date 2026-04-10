@@ -2101,6 +2101,134 @@
       "args": []
     },
     {
+      "name": "initialize_wsol_vaults",
+      "docs": [
+        "One-time deploy step: creates cdp_wsol_vault and cdp_wsol_buyback_vault.",
+        "Must be called after initialize_cdp_config and before any repay_debt calls.",
+        "Authority only."
+      ],
+      "discriminator": [
+        154,
+        90,
+        81,
+        119,
+        24,
+        222,
+        21,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "wsol_mint",
+          "address": "So11111111111111111111111111111111111111112"
+        },
+        {
+          "name": "cdp_wsol_vault",
+          "docs": [
+            "Protocol WSOL buffer used by repay_debt (SPL → SOL swap output)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cdp_wsol_buyback_vault",
+          "docs": [
+            "Protocol WSOL buyback vault used by repay_debt and repay_debt_rise_sol (shortfall path)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  119,
+                  115,
+                  111,
+                  108,
+                  95,
+                  98,
+                  117,
+                  121,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "liquidate",
       "docs": [
         "Liquidate an unhealthy position.",
@@ -2760,7 +2888,7 @@
         {
           "name": "collateral_mint",
           "docs": [
-            "The collateral token mint."
+            "The collateral token mint — decimal precision used for USD value scaling."
           ]
         },
         {
@@ -2775,7 +2903,37 @@
           "docs": [
             "Protocol's collateral vault for this token type."
           ],
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_config.mint",
+                "account": "CollateralConfig"
+              }
+            ]
+          }
         },
         {
           "name": "sol_payment_config",
@@ -3815,7 +3973,8 @@
         {
           "name": "cdp_wsol_vault",
           "docs": [
-            "Protocol WSOL buffer: receives Jupiter's inbound WSOL output, then closed to unwrap."
+            "Protocol WSOL buffer: receives Jupiter's inbound WSOL output, then closed to unwrap.",
+            "Pre-initialized by init_wsol_vaults at deploy time."
           ],
           "writable": true,
           "pda": {
@@ -3846,7 +4005,7 @@
           "name": "cdp_wsol_buyback_vault",
           "docs": [
             "Protocol WSOL buyback vault: holds WSOL for the reverse swap (WSOL → collateral).",
-            "Only funded when a shortfall buyback is needed on full repayment."
+            "Pre-initialized by init_wsol_vaults at deploy time."
           ],
           "writable": true,
           "pda": {
@@ -4439,7 +4598,7 @@
           "name": "cdp_wsol_buyback_vault",
           "docs": [
             "Protocol WSOL buyback vault: receives treasury SOL (via staking CPI), wrapped as WSOL,",
-            "then swapped → collateral tokens → borrower. Only funded on shortfall path."
+            "then swapped → collateral tokens → borrower. Pre-initialized by init_wsol_vaults."
           ],
           "writable": true,
           "pda": {

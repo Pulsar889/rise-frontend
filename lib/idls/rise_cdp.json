@@ -97,7 +97,64 @@
           "name": "global_pool",
           "docs": [
             "GlobalPool from staking — read for staking_rise_sol_supply (ceiling denominator)."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         }
       ],
       "args": []
@@ -204,6 +261,72 @@
           }
         },
         {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "pyth_price_feed"
         },
         {
@@ -284,7 +407,64 @@
           "name": "global_pool",
           "docs": [
             "GlobalPool from the staking program — read for exchange rate and staking supply."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "cdp_config",
@@ -307,6 +487,72 @@
                   102,
                   105,
                   103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
                 ]
               }
             ]
@@ -994,6 +1240,41 @@
                   105,
                   103
                 ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrow_rewards",
+          "docs": [
+            "Per-position borrow rewards — settled here so pending RISE is not lost on close.",
+            "Remains open after close_position; call claim_borrow_rewards to collect pending RISE."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  95,
+                  114,
+                  101,
+                  119,
+                  97,
+                  114,
+                  100,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "position"
               }
             ]
           }
@@ -1933,7 +2214,64 @@
           "name": "global_pool",
           "docs": [
             "GlobalPool from staking — read for exchange rate."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "cdp_config",
@@ -2054,7 +2392,8 @@
           "name": "wsol_mint",
           "docs": [
             "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
-          ]
+          ],
+          "address": "So11111111111111111111111111111111111111112"
         },
         {
           "name": "cdp_wsol_vault",
@@ -2081,6 +2420,72 @@
                   117,
                   108,
                   116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
                 ]
               }
             ]
@@ -2154,6 +2559,10 @@
         },
         {
           "name": "borrow_rewards",
+          "docs": [
+            "Borrow rewards — settled here so pending RISE is preserved for the borrower to claim",
+            "via claim_borrow_rewards after liquidation. Account remains open intentionally."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -2250,7 +2659,64 @@
           "name": "global_pool",
           "docs": [
             "GlobalPool from staking — read-only for staking_rise_sol_supply (ceiling denominator)."
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "position",
@@ -2310,6 +2776,72 @@
             "Protocol's collateral vault for this token type."
           ],
           "writable": true
+        },
+        {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pyth_price_feed"
@@ -2462,7 +2994,64 @@
           "docs": [
             "GlobalPool from staking — read to verify the liquidity shortfall condition."
           ],
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "collateral_config",
@@ -2603,7 +3192,8 @@
           "name": "wsol_mint",
           "docs": [
             "Native SOL (WSOL) mint — Jupiter outputs WSOL which is then unwrapped."
-          ]
+          ],
+          "address": "So11111111111111111111111111111111111111112"
         },
         {
           "name": "cdp_wsol_vault",
@@ -2693,6 +3283,72 @@
                 144
               ]
             }
+          }
+        },
+        {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
           }
         },
         {
@@ -2847,7 +3503,64 @@
           }
         },
         {
-          "name": "global_pool"
+          "name": "global_pool",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
         },
         {
           "name": "cdp_config",
@@ -3009,6 +3722,72 @@
           ]
         },
         {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "pyth_price_feed"
         },
         {
@@ -3030,7 +3809,8 @@
           "name": "wsol_mint",
           "docs": [
             "Native SOL (WSOL) mint."
-          ]
+          ],
+          "address": "So11111111111111111111111111111111111111112"
         },
         {
           "name": "cdp_wsol_vault",
@@ -3586,10 +4366,74 @@
           }
         },
         {
+          "name": "pool_vault",
+          "docs": [
+            "Staking pool SOL vault — receives residual WSOL swept from buyback vault after swap."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
           "name": "wsol_mint",
           "docs": [
             "Native SOL (WSOL) mint — needed for Jupiter buyback swap."
-          ]
+          ],
+          "address": "So11111111111111111111111111111111111111112"
         },
         {
           "name": "cdp_wsol_buyback_vault",
@@ -3625,6 +4469,72 @@
                   117,
                   108,
                   116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
                 ]
               }
             ]
@@ -4029,6 +4939,72 @@
           }
         },
         {
+          "name": "sol_payment_config",
+          "docs": [
+            "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "pyth_price_feed"
         },
         {
@@ -4268,6 +5244,11 @@
       "code": 6022,
       "name": "Unauthorized",
       "msg": "Caller is not authorized for this operation"
+    },
+    {
+      "code": 6023,
+      "name": "WrongPriceFeed",
+      "msg": "Price feed account does not match the one registered for this collateral"
     }
   ],
   "types": [

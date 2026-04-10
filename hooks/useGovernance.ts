@@ -25,6 +25,7 @@ import {
   deriveProposal,
   deriveVoteRecord,
   deriveProtocolTreasury,
+  deriveRewardsConfig,
   STAKING_PROGRAM_ID,
 } from "@/lib/pdas";
 
@@ -274,7 +275,10 @@ export function useGovernance() {
       // ── Gauges (from rewards program) ───────────────────────────────────────
       try {
         const rewardsProgram = getRewardsProgram(provider);
-        const rawGauges = await (rewardsProgram.account as any)["gauge"].all();
+        const rewardsConfig = await (rewardsProgram.account as any)["rewardsConfig"].fetch(deriveRewardsConfig());
+        const gaugeCount: number = rewardsConfig.gaugeCount.toNumber();
+        const rawGauges = ((await (rewardsProgram.account as any)["gauge"].all()) as any[])
+          .filter((raw: any) => raw.account.index.toNumber() < gaugeCount);
 
         // Build user's last submitted weights by pool pubkey
         const myWeightByPool: Record<string, number> = {};

@@ -35,29 +35,29 @@ export default function DashboardPage() {
         <Card>
           <StatBox
             label="riseSOL Balance"
-            value={connected ? staking.riseSolBalance.toFixed(2) : "—"}
-            sub={connected ? `≈ ${staking.myStakedSol.toFixed(2)} SOL` : undefined}
+            value={connected && staking.riseSolBalance > 0 ? staking.riseSolBalance.toFixed(2) : "—"}
+            sub={connected && staking.riseSolBalance > 0 ? `≈ ${staking.myStakedSol.toFixed(2)} SOL` : undefined}
           />
         </Card>
         <Card>
           <StatBox
             label="Total Debt"
-            value={connected ? `${totalDebt.toFixed(4)} riseSOL` : "—"}
-            sub={connected ? `${positions.length} position${positions.length !== 1 ? "s" : ""}` : undefined}
+            value={connected && totalDebt > 0 ? `${totalDebt.toFixed(4)} riseSOL` : "—"}
+            sub={connected && positions.length > 0 ? `${positions.length} position${positions.length !== 1 ? "s" : ""}` : undefined}
           />
         </Card>
         <Card>
           <StatBox
             label="veRISE Power"
-            value={connected ? veRiseBalance.toLocaleString() : "—"}
+            value={connected && veRiseBalance > 0 ? veRiseBalance.toLocaleString() : "—"}
             sub="Voting balance"
           />
         </Card>
         <Card>
           <StatBox
             label="Claimable"
-            value={connected ? `${totalClaimable.toFixed(2)} RISE` : "—"}
-            sub={connected ? `+ ${claimableRevenue.toFixed(4)} SOL revenue` : undefined}
+            value={connected && totalClaimable > 0 ? `${totalClaimable.toFixed(2)} RISE` : "—"}
+            sub={connected && claimableRevenue > 0 ? `+ ${claimableRevenue.toFixed(4)} SOL revenue` : undefined}
           />
         </Card>
       </div>
@@ -150,10 +150,10 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <StatBox label="veRISE Balance" value={connected ? veRiseBalance.toLocaleString() : "—"} />
+              <StatBox label="veRISE Balance" value={connected && veRiseBalance > 0 ? veRiseBalance.toLocaleString() : "—"} />
               <StatBox
                 label="Revenue Share"
-                value={connected ? `${claimableRevenue.toFixed(4)} SOL` : "—"}
+                value={connected && claimableRevenue > 0 ? `${claimableRevenue.toFixed(4)} SOL` : "—"}
                 sub="Claimable"
                 accent
               />
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <div className="rounded-xl bg-[#1E293B] border border-[#334155] px-4 py-4">
               <p className="text-xs text-[#94A3B8] uppercase tracking-wider mb-1">Claimable RISE</p>
               <p className="text-4xl font-semibold text-[#60A5FA] tabular-nums">
-                {connected ? totalClaimable.toFixed(2) : "—"}
+                {connected && totalClaimable > 0 ? totalClaimable.toFixed(2) : "—"}
               </p>
               <p className="text-sm text-[#94A3B8] mt-1">
                 from {activeGaugeCount} active gauge{activeGaugeCount !== 1 ? "s" : ""}

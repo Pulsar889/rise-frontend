@@ -1,9 +1,16 @@
 "use client";
 import { Card } from "@/components/ui/Card";
-import { useRewards } from "@/hooks/useRewards";
+import type { LpGauge } from "@/hooks/useRewards";
 
-export function ClaimPanel() {
-  const { totalClaimable, stakeClaimable, gauges, claimAll, loading } = useRewards();
+interface ClaimPanelProps {
+  totalClaimable: number;
+  stakeClaimable: number;
+  gauges: LpGauge[];
+  claimAll: () => Promise<void>;
+  loading: boolean;
+}
+
+export function ClaimPanel({ totalClaimable, stakeClaimable, gauges, claimAll, loading }: ClaimPanelProps) {
 
   const hasBreakdown = stakeClaimable > 0 || gauges.some((g) => g.claimableRise > 0);
 

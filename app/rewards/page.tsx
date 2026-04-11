@@ -6,7 +6,7 @@ import { ClaimPanel } from "@/components/rewards/ClaimPanel";
 import { useRewards } from "@/hooks/useRewards";
 
 export default function RewardsPage() {
-  const { gauges, totalWeeklyEmissions } = useRewards();
+  const { gauges, totalWeeklyEmissions, fetchError, fetching, totalClaimable, stakeClaimable, claimAll, loading } = useRewards();
 
   const totalTvl   = gauges.reduce((s, g) => s + g.tvl, 0);
   const myDeposits = gauges.reduce((s, g) => s + g.myDeposit, 0);
@@ -42,9 +42,21 @@ export default function RewardsPage() {
         </Card>
       </div>
 
+      {fetchError && (
+        <div className="mb-6 rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 break-all">
+          {fetchError}
+        </div>
+      )}
+
       {/* Claim panel */}
       <div className="mb-8">
-        <ClaimPanel />
+        <ClaimPanel
+          totalClaimable={totalClaimable}
+          stakeClaimable={stakeClaimable}
+          gauges={gauges}
+          claimAll={claimAll}
+          loading={loading}
+        />
       </div>
 
       {/* Gauge list */}

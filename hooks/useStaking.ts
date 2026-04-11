@@ -262,6 +262,8 @@ export function useStaking() {
           ticket,
           riseSolMint,
           userRiseSolAccount,
+          stakeRewardsConfig: null,
+          userStakeRewards:   null,
           systemProgram:     SystemProgram.programId,
           tokenProgram:      TOKEN_PROGRAM_ID,
         })

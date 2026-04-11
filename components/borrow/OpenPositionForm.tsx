@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
-import { PublicKey, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { useCdp } from "@/hooks/useCdp";
 import { useStaking } from "@/hooks/useStaking";
@@ -19,16 +19,18 @@ export function OpenPositionForm() {
   const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
   const [txError, setTxError] = useState<string | null>(null);
 
+  const config = collaterals.find((c) => c.symbol === selectedCollateral);
+  const solPriceUsd = collaterals.find((c) => c.symbol === "SOL")?.priceUsd ?? 0;
+  const exchangeRate = staking.exchangeRate;
+
   useEffect(() => {
     if (!publicKey || !config) { setWalletBalance(undefined); return; }
     const mint = config.mint;
     if (mint === WSOL_MINT) {
-      // Native SOL — reserve 0.01 SOL for fees
       connection.getBalance(publicKey).then((lamports) => {
         setWalletBalance(Math.max(0, lamports / LAMPORTS_PER_SOL - 0.01));
       }).catch(() => setWalletBalance(undefined));
     } else {
-      // SPL token
       getAssociatedTokenAddress(new PublicKey(mint), publicKey)
         .then((ata) => connection.getTokenAccountBalance(ata))
         .then((res) => setWalletBalance(res.value.uiAmount ?? 0))
@@ -36,30 +38,48 @@ export function OpenPositionForm() {
     }
   }, [publicKey, selectedCollateral]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const config = collaterals.find((c) => c.symbol === selectedCollateral);
-  const solPriceUsd = collaterals.find((c) => c.symbol === "SOL")?.priceUsd ?? 0;
-
   const collateralNum = parseFloat(collateral) || 0;
   const borrowNum = parseFloat(borrow) || 0;
 
-  // SOL-equivalent value of collateral — used only for LTV/health calculations.
-  // Collateral is held in its original currency on-chain.
-  const collateralValueSol = config ? collateralNum * (config.priceUsd / solPriceUsd) : 0;
+  // SOL-equivalent value of collateral
+  const collateralValueSol = config && solPriceUsd > 0
+    ? collateralNum * (config.priceUsd / solPriceUsd)
+    : 0;
 
-  // riseSOL price in SOL terms = exchange rate (e.g. 1 riseSOL = 1.0842 SOL)
-  const exchangeRate = staking.exchangeRate;
-
-  // Max borrowable riseSOL = collateral_sol * ltv% / exchange_rate
+  // Max borrowable riseSOL given entered collateral
   const maxBorrow = config && collateralValueSol > 0
     ? (collateralValueSol * config.ltv) / (100 * exchangeRate)
     : 0;
 
-  // LTV = (debt_riseSOL * exchange_rate) / collateral_sol
+  // LTV = (debt_riseSOL * exchangeRate) / collateral_sol
   const currentLtv = collateralValueSol > 0
     ? ((borrowNum * exchangeRate) / collateralValueSol) * 100
     : 0;
 
   const overLtv = currentLtv > (config?.ltv ?? 75);
+
+  // Typing borrow → autofill minimum collateral needed
+  function handleBorrowChange(val: string) {
+    setBorrow(val);
+    const num = parseFloat(val) || 0;
+    if (num > 0 && config && exchangeRate > 0 && solPriceUsd > 0 && config.priceUsd > 0) {
+      // minCollateral = (borrow * exchangeRate * solPriceUsd) / (collateralPriceUsd * ltv/100)
+      const needed = (num * exchangeRate * solPriceUsd) / (config.priceUsd * (config.ltv / 100));
+      setCollateral(needed.toFixed(4));
+    }
+  }
+
+  // Typing collateral → just update collateral; max borrow updates reactively
+  function handleCollateralChange(val: string) {
+    setCollateral(val);
+  }
+
+  // Switching collateral type resets both fields
+  function handleCollateralTypeChange(symbol: string) {
+    setSelectedCollateral(symbol);
+    setCollateral("");
+    setBorrow("");
+  }
 
   async function handleOpen() {
     if (!collateral || !borrow) return;
@@ -84,7 +104,7 @@ export function OpenPositionForm() {
           {collaterals.map((c) => (
             <button
               key={c.symbol}
-              onClick={() => setSelectedCollateral(c.symbol)}
+              onClick={() => handleCollateralTypeChange(c.symbol)}
               className={`rounded-full px-4 py-2 text-sm font-medium border transition-colors ${
                 selectedCollateral === c.symbol
                   ? "border-[#60A5FA] bg-[#1E3A5F] text-[#60A5FA]"
@@ -102,25 +122,25 @@ export function OpenPositionForm() {
           <div><span className="text-[#94A3B8]">Max LTV </span><span className="font-semibold text-[#F1F5F9]">{config.ltv}%</span></div>
           <div><span className="text-[#94A3B8]">Liquidation </span><span className="font-semibold text-[#F1F5F9]">{config.liquidationThreshold}%</span></div>
           <div><span className="text-[#94A3B8]">Price </span><span className="font-semibold text-[#F1F5F9]">{pricesLoaded ? `$${config.priceUsd.toLocaleString()}` : "—"}</span></div>
-          <div><span className="text-[#94A3B8]">≈ SOL value </span><span className="font-semibold text-[#F1F5F9]">{pricesLoaded ? `${collateralValueSol.toFixed(4)} SOL` : "—"}</span></div>
-          <div><span className="text-[#94A3B8]">Held as </span><span className="font-semibold text-[#F1F5F9]">{config.symbol}</span></div>
         </div>
       )}
 
-      <TokenInput
-        label="Deposit Collateral"
-        token={selectedCollateral}
-        value={collateral}
-        onChange={setCollateral}
-        max={walletBalance}
-      />
-
+      {/* Borrow first — max updates as collateral changes */}
       <TokenInput
         label="Borrow riseSOL"
         token="riseSOL"
         value={borrow}
-        onChange={setBorrow}
+        onChange={handleBorrowChange}
         max={pricesLoaded && maxBorrow > 0 ? maxBorrow : undefined}
+      />
+
+      {/* Collateral — autofills when borrow is typed */}
+      <TokenInput
+        label="Deposit Collateral"
+        token={selectedCollateral}
+        value={collateral}
+        onChange={handleCollateralChange}
+        max={walletBalance}
       />
 
       {pricesLoaded && currentLtv > 0 && (

@@ -10,6 +10,8 @@ import {
   deriveGlobalPool,
   derivePoolVault,
   deriveWithdrawalTicket,
+  deriveStakeRewardsConfig,
+  deriveUserStakeRewards,
 } from "@/lib/pdas";
 
 export interface StakingData {
@@ -187,15 +189,26 @@ export function useStaking() {
         ? []
         : [createAssociatedTokenAccountInstruction(publicKey, userRiseSolAccount, publicKey, riseSolMint)];
 
-      // PDA debug — compare these against on-chain accounts if simulation fails
-      console.log("[stake_sol] PDAs", {
-        pool:               pool.toBase58(),
-        poolVault:          poolVault.toBase58(),
-        riseSolMint:        riseSolMint.toBase58(),
-        userRiseSolAccount: userRiseSolAccount.toBase58(),
-        ataExists:          ataInfo !== null,
-        lamports:           Math.round(solAmount * LAMPORTS_PER_SOL),
-      });
+      // Register stake rewards account if not yet initialized
+      const stakeRewardsConfig  = deriveStakeRewardsConfig();
+      const userStakeRewardsPda = deriveUserStakeRewards(publicKey);
+      const stakeRewardsConfigInfo = await connection.getAccountInfo(stakeRewardsConfig);
+      const userStakeRewardsInfo   = await connection.getAccountInfo(userStakeRewardsPda);
+
+      if (stakeRewardsConfigInfo && !userStakeRewardsInfo) {
+        const registerIx = await program.methods
+          .registerStakeRewards()
+          .accounts({
+            user:               publicKey,
+            pool,
+            stakeRewardsConfig,
+            userStakeRewards:   userStakeRewardsPda,
+            userRiseSolAccount,
+            systemProgram:      SystemProgram.programId,
+          })
+          .instruction();
+        preIx.push(registerIx);
+      }
 
       try {
         await program.methods
@@ -208,8 +221,8 @@ export function useStaking() {
             userRiseSolAccount,
             systemProgram:      SystemProgram.programId,
             tokenProgram:       TOKEN_PROGRAM_ID,
-            stakeRewardsConfig: null,
-            userStakeRewards:   null,
+            stakeRewardsConfig: stakeRewardsConfigInfo ? stakeRewardsConfig : null,
+            userStakeRewards:   stakeRewardsConfigInfo ? userStakeRewardsPda : null,
           } as any)
           .preInstructions(preIx)
           .rpc();
@@ -253,6 +266,13 @@ export function useStaking() {
       const { getAssociatedTokenAddress } = await import("@solana/spl-token");
       const userRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
+      const stakeRewardsConfig  = deriveStakeRewardsConfig();
+      const userStakeRewardsPda = deriveUserStakeRewards(publicKey);
+      const [stakeRewardsConfigInfo, userStakeRewardsInfo] = await Promise.all([
+        connection.getAccountInfo(stakeRewardsConfig),
+        connection.getAccountInfo(userStakeRewardsPda),
+      ]);
+
       await program.methods
         .unstakeRiseSol(new BN(riseSolAmount * LAMPORTS_PER_SOL))
         .accounts({
@@ -261,8 +281,8 @@ export function useStaking() {
           ticket,
           riseSolMint,
           userRiseSolAccount,
-          stakeRewardsConfig: null,
-          userStakeRewards:   null,
+          stakeRewardsConfig: stakeRewardsConfigInfo ? stakeRewardsConfig : null,
+          userStakeRewards:   userStakeRewardsInfo   ? userStakeRewardsPda : null,
           systemProgram:     SystemProgram.programId,
           tokenProgram:      TOKEN_PROGRAM_ID,
         } as any)

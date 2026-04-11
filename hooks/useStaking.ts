@@ -23,7 +23,7 @@ export interface StakingData {
 }
 
 export interface WithdrawalTicket {
-  nonce: number;
+  nonce: bigint;
   address: PublicKey;
   solAmount: number;
   claimableEpoch: number;
@@ -47,7 +47,6 @@ export function useStaking() {
   // null = unknown (initial load); true/false = pool exists or not
   const [protocolInitialized, setProtocolInitialized] = useState<boolean | null>(null);
 
-  const [nextUnstakeNonce, setNextUnstakeNonce] = useState(0);
   const [pendingTickets, setPendingTickets] = useState<WithdrawalTicket[]>([]);
 
   const wallet = useAnchorWallet();
@@ -120,6 +119,22 @@ export function useStaking() {
         const ata     = await getAssociatedTokenAddress(raw.riseSolMint, publicKey);
         const ataInfo = await connection.getTokenAccountBalance(ata).catch(() => null);
         if (ataInfo) riseSolBalance = ataInfo.value.uiAmount ?? 0;
+
+        // Fetch all WithdrawalTicket accounts owned by this wallet.
+        // Layout: [8 discriminator][32 owner] → memcmp at offset 8.
+        const rawTickets = await (program.account as any)["withdrawalTicket"].all([
+          { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
+        ]);
+        const tickets: WithdrawalTicket[] = rawTickets.map((raw: any) => {
+          const nonce = BigInt(raw.account.nonce.toString());
+          return {
+            nonce,
+            address:        deriveWithdrawalTicket(publicKey, nonce),
+            solAmount:      raw.account.solAmount.toNumber() / LAMPORTS_PER_SOL,
+            claimableEpoch: raw.account.claimableEpoch.toNumber(),
+          };
+        });
+        setPendingTickets(tickets);
       }
 
       setData({
@@ -208,28 +223,32 @@ export function useStaking() {
    * Burns riseSOL and creates a WithdrawalTicket claimable after ~2 epochs.
    * Returns the nonce used so the caller can pass it to claimUnstake later.
    */
-  const unstake = useCallback(async (riseSolAmount: number): Promise<number> => {
+  const unstake = useCallback(async (riseSolAmount: number): Promise<bigint> => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
     setLoading(true);
     try {
       const provider = getProvider(wallet);
       const program  = getStakingProgram(provider);
-      const pool     = deriveGlobalPool();
+      const poolPda  = deriveGlobalPool();
 
-      const poolData    = await (program.account as any)["globalPool"].fetch(pool);
-      const riseSolMint = (poolData as { riseSolMint: PublicKey }).riseSolMint;
+      // Read pool.unstake_nonce before sending so we know exactly which PDA the
+      // program will create (it seeds the ticket with the pre-increment value).
+      const poolData    = await (program.account as any)["globalPool"].fetch(poolPda) as {
+        riseSolMint: PublicKey;
+        unstakeNonce: BN;
+      };
+      const riseSolMint = poolData.riseSolMint;
+      const nonce       = BigInt(poolData.unstakeNonce.toString());
+      const ticket      = deriveWithdrawalTicket(publicKey, nonce);
 
       const { getAssociatedTokenAddress } = await import("@solana/spl-token");
       const userRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
-      const nonce  = nextUnstakeNonce;
-      const ticket = deriveWithdrawalTicket(publicKey, nonce);
-
       await program.methods
-        .unstakeRiseSol(new BN(riseSolAmount * LAMPORTS_PER_SOL), nonce)
+        .unstakeRiseSol(new BN(riseSolAmount * LAMPORTS_PER_SOL))
         .accounts({
           user:              publicKey,
-          pool,
+          pool:              poolPda,
           ticket,
           riseSolMint,
           userRiseSolAccount,
@@ -249,18 +268,17 @@ export function useStaking() {
           claimableEpoch: t.claimableEpoch.toNumber(),
         },
       ]);
-      setNextUnstakeNonce((n) => n + 1);
       await refresh();
       return nonce;
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, nextUnstakeNonce, refresh]);
+  }, [wallet, publicKey, refresh]);
 
   /**
    * Redeems a matured WithdrawalTicket and returns SOL to the user.
    */
-  const claimUnstake = useCallback(async (nonce: number) => {
+  const claimUnstake = useCallback(async (nonce: bigint) => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
     setLoading(true);
     try {

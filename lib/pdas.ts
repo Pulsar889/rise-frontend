@@ -36,10 +36,13 @@ export function deriveProtocolTreasury(): PublicKey {
   )[0];
 }
 
-/** WithdrawalTicket PDA — one per unstake, keyed by owner + nonce. */
-export function deriveWithdrawalTicket(owner: PublicKey, nonce: number): PublicKey {
+/** WithdrawalTicket PDA — one per unstake, keyed by owner + nonce.
+ *  On-chain seed: &pool.unstake_nonce.to_le_bytes() — 8-byte u64 little-endian. */
+export function deriveWithdrawalTicket(owner: PublicKey, nonce: bigint): PublicKey {
+  const nonceBuf = Buffer.alloc(8);
+  nonceBuf.writeBigUInt64LE(nonce);
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("withdrawal_ticket"), owner.toBuffer(), Buffer.from([nonce])],
+    [Buffer.from("withdrawal_ticket"), owner.toBuffer(), nonceBuf],
     STAKING_PROGRAM_ID
   )[0];
 }

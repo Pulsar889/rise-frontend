@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useWallet, useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, LAMPORTS_PER_SOL, Keypair, SystemProgram } from "@solana/web3.js";
@@ -149,11 +149,16 @@ export function useRewards() {
 
       setUserStakes(mappedStakes);
 
+      // ── Batch-fetch all gauge LP vault accounts in one call ─────────────────
+      const vaultPdas = rawGauges.map((raw: any) => deriveGaugeLpVault(raw.account.pool as PublicKey));
+      const vaultInfos = vaultPdas.length > 0
+        ? await connection.getMultipleAccountsInfo(vaultPdas)
+        : [];
+
       // ── Map gauges + compute pending rewards ────────────────────────────────
       let totalClaimableAccum = 0;
 
-      const mappedGauges: LpGauge[] = await Promise.all(
-        rawGauges.map(async (raw: any) => {
+      const mappedGauges: LpGauge[] = rawGauges.map((raw: any, i: number) => {
           const acc            = raw.account;
           const gaugePdaStr    = raw.publicKey.toBase58();
           const pool           = acc.pool as PublicKey;
@@ -163,23 +168,15 @@ export function useRewards() {
           const rewardPerTokenBig          = BigInt(acc.rewardPerToken.toString());
           const totalLpDepositedRaw: number = acc.totalLpDeposited.toNumber();
 
-          // Estimate weekly emission for this gauge
           const weeklyEmission = epochEmissionsRaw * weightBps / 10_000 / LAMPORTS_PER_SOL;
 
-          // Attempt to read LP mint from the gauge LP vault's raw SPL account data.
-          // SPL TokenAccount layout (no discriminator): bytes 0–32 = mint pubkey.
+          // Read LP mint from the pre-fetched vault account info
           let lpMint: string | null = null;
-          try {
-            const vaultPda  = deriveGaugeLpVault(pool);
-            const vaultInfo = await connection.getAccountInfo(vaultPda);
-            if (vaultInfo && vaultInfo.data.length >= 32) {
-              lpMint = new PublicKey(vaultInfo.data.slice(0, 32)).toBase58();
-            }
-          } catch {
-            // Vault not yet initialized — lpMint stays null
+          const vaultInfo = vaultInfos[i];
+          if (vaultInfo && vaultInfo.data.length >= 32) {
+            lpMint = new PublicKey((vaultInfo.data as Buffer).slice(0, 32)).toBase58();
           }
 
-          // Per-user data for this gauge
           let myDeposit     = 0;
           let claimableRise = 0;
 
@@ -189,9 +186,6 @@ export function useRewards() {
             const rewardDebtBig  = BigInt(stake.rewardDebt.toString());
             const pendingRaw     = BigInt(stake.pendingRewards.toString());
 
-            // Mirror on-chain claim formula:
-            //   newly_accrued = lp_amount * reward_per_token / REWARD_SCALE (sat.sub reward_debt)
-            //   total = pending_rewards + newly_accrued
             const accumulated  = lpAmountRaw * rewardPerTokenBig / REWARD_SCALE;
             const newlyAccrued = accumulated > rewardDebtBig ? accumulated - rewardDebtBig : 0n;
             const totalRaw     = pendingRaw + newlyAccrued;
@@ -218,8 +212,7 @@ export function useRewards() {
             myDeposit,
             claimableRise,
           };
-        })
-      );
+        });
 
       // Sort gauges by index for stable ordering
       mappedGauges.sort((a, b) => a.index - b.index);
@@ -228,6 +221,7 @@ export function useRewards() {
 
       // ── Staking RISE rewards ──────────────────────────────────────────────
       let stakeClaimableAccum = 0;
+      let stakeEmissions = 0;
       if (publicKey) {
         try {
           const staking = getStakingProgram(provider);
@@ -236,6 +230,7 @@ export function useRewards() {
 
           if (stakeConfigInfo) {
             const stakeConfig = await (staking.account as any)["stakeRewardsConfig"].fetch(stakeConfigPda);
+            stakeEmissions = stakeConfig.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
             const rewardPerToken: bigint = BigInt(stakeConfig.rewardPerToken.toString());
 
             const userStakeRewardsPda = deriveUserStakeRewards(publicKey);
@@ -260,16 +255,8 @@ export function useRewards() {
       setTotalClaimable(totalClaimableAccum + stakeClaimableAccum);
 
       // ── Total protocol weekly emissions (all three sources) ───────────────
-      let stakeEmissions = 0;
+      // stakeEmissions already loaded above; just need borrow emissions.
       let borrowEmissions = 0;
-      try {
-        const staking = getStakingProgram(provider);
-        const stakeConfigInfo = await connection.getAccountInfo(deriveStakeRewardsConfig());
-        if (stakeConfigInfo) {
-          const sc = await (staking.account as any)["stakeRewardsConfig"].fetch(deriveStakeRewardsConfig());
-          stakeEmissions = sc.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
-        }
-      } catch { /* not initialized */ }
       try {
         const cdp = (await import("@/lib/programs")).getCdpProgram(provider);
         const borrowConfigInfo = await connection.getAccountInfo(deriveBorrowRewardsConfig());
@@ -286,8 +273,10 @@ export function useRewards() {
     }
   }, [wallet, publicKey, connection]);
 
+  const refreshDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    refresh();
+    if (refreshDebounce.current) clearTimeout(refreshDebounce.current);
+    refreshDebounce.current = setTimeout(() => { refresh(); }, 150);
   }, [refresh]);
 
   // ── Internal helpers ────────────────────────────────────────────────────────

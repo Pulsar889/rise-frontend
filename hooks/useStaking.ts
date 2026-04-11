@@ -154,9 +154,10 @@ export function useStaking() {
     }
   }, [wallet, publicKey, connection]);
 
-  // Refresh whenever wallet connects or disconnects
+  const refreshDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    refresh();
+    if (refreshDebounce.current) clearTimeout(refreshDebounce.current);
+    refreshDebounce.current = setTimeout(() => { refresh(); }, 150);
   }, [refresh]);
 
   const stake = useCallback(async (solAmount: number) => {

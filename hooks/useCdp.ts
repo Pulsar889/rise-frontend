@@ -77,6 +77,8 @@ export function useCdp() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  // Remaining riseSOL that can be borrowed before hitting the protocol debt ceiling
+  const [protocolBorrowCapacity, setProtocolBorrowCapacity] = useState<number | null>(null);
 
   // Each borrower can have multiple positions keyed by nonce (0–255).
   // Derived from on-chain data after refresh; incremented locally on openPosition.
@@ -116,19 +118,41 @@ export function useCdp() {
   // ── On-chain reads ─────────────────────────────────────────────────────────
 
   const refresh = useCallback(async () => {
-    if (!publicKey) {
-      setPositions([]);
-      return;
-    }
     setFetching(true);
     setFetchError(null);
     try {
       const readWallet: AnchorWallet = wallet ?? {
-        publicKey,
+        publicKey: PublicKey.default,
         signTransaction: async (tx) => tx,
         signAllTransactions: async (txs) => txs,
       };
       const provider = getProvider(readWallet);
+      const cdpReadOnly = getCdpProgram(provider);
+      const stakingReadOnly = getStakingProgram(provider);
+
+      // ── Protocol borrow capacity (no wallet needed) ──────────────────────────
+      try {
+        const [cdpConfigData, globalPoolData] = await Promise.all([
+          (cdpReadOnly.account as any)["cdpConfig"].fetch(deriveCdpConfig()),
+          (stakingReadOnly.account as any)["globalPool"].fetch(deriveGlobalPool()),
+        ]);
+        const supply        = BigInt(globalPoolData.stakingRiseSolSupply.toString());
+        const multBps       = BigInt(cdpConfigData.debtCeilingMultiplierBps.toString());
+        const minted        = BigInt(cdpConfigData.cdpRiseSolMinted.toString());
+        const ceiling       = supply * multBps / 10_000n;
+        const remaining     = ceiling > minted ? ceiling - minted : 0n;
+        const singleLoanCap = ceiling * 500n / 10_000n; // MAX_SINGLE_LOAN_BPS = 500
+        const capacity      = remaining < singleLoanCap ? remaining : singleLoanCap;
+        setProtocolBorrowCapacity(Number(capacity) / LAMPORTS_PER_SOL);
+      } catch {
+        // CDP or staking not initialized — leave capacity as null
+      }
+
+      if (!publicKey) {
+        setPositions([]);
+        return;
+      }
+
       const cdp = getCdpProgram(provider);
 
       // Fetch all CdpPosition accounts owned by this wallet.
@@ -699,6 +723,7 @@ export function useCdp() {
     positions,
     collaterals,
     pricesLoaded,
+    protocolBorrowCapacity,
     loading,
     fetching,
     fetchError,

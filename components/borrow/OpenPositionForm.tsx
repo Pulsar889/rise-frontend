@@ -14,7 +14,7 @@ export function OpenPositionForm() {
   const [selectedCollateral, setSelectedCollateral] = useState("SOL");
   const { connection } = useConnection();
   const { publicKey } = useWallet();
-  const { collaterals, pricesLoaded, openPosition, loading } = useCdp();
+  const { collaterals, pricesLoaded, protocolBorrowCapacity, openPosition, loading } = useCdp();
   const { data: staking } = useStaking();
   const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
   const [txError, setTxError] = useState<string | null>(null);
@@ -46,10 +46,18 @@ export function OpenPositionForm() {
     ? collateralNum * (config.priceUsd / solPriceUsd)
     : 0;
 
-  // Max borrowable riseSOL given entered collateral
-  const maxBorrow = config && collateralValueSol > 0
+  // Max borrowable riseSOL given entered collateral (LTV-based)
+  const maxBorrowByCollateral = config && collateralValueSol > 0
     ? (collateralValueSol * config.ltv) / (100 * exchangeRate)
-    : 0;
+    : null;
+
+  // Effective max = min(protocol capacity, collateral-based max)
+  // If no collateral entered yet, show protocol capacity alone so user knows the ceiling
+  const maxBorrow = (() => {
+    if (protocolBorrowCapacity === null) return maxBorrowByCollateral ?? undefined;
+    if (maxBorrowByCollateral === null) return protocolBorrowCapacity;
+    return Math.min(protocolBorrowCapacity, maxBorrowByCollateral);
+  })();
 
   // LTV = (debt_riseSOL * exchangeRate) / collateral_sol
   const currentLtv = collateralValueSol > 0

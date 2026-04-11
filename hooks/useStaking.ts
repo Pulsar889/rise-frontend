@@ -43,7 +43,6 @@ export function useStaking() {
   const [data, setData] = useState<StakingData>(EMPTY_DATA);
   const [loading, setLoading] = useState(false);
   const stakeSubmitting = useRef(false);
-  const refreshing = useRef(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   // null = unknown (initial load); true/false = pool exists or not
@@ -56,8 +55,6 @@ export function useStaking() {
   const { connection } = useConnection();
 
   const refresh = useCallback(async () => {
-    if (refreshing.current) return;
-    refreshing.current = true;
     setFetching(true);
     setFetchError(null);
     try {
@@ -154,7 +151,6 @@ export function useStaking() {
       setFetchError(err?.message ?? "Failed to load staking data");
     } finally {
       setFetching(false);
-      refreshing.current = false;
     }
   }, [wallet, publicKey, connection]);
 

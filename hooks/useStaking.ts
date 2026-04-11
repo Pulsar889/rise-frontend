@@ -291,7 +291,8 @@ export function useStaking() {
       await program.methods
         .claimUnstake()
         .accounts({
-          user:          publicKey,
+          caller:        publicKey,
+          owner:         publicKey,
           pool,
           ticket,
           poolVault,

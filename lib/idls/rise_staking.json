@@ -243,9 +243,19 @@
       ],
       "accounts": [
         {
-          "name": "user",
+          "name": "caller",
+          "docs": [
+            "Anyone may submit this transaction — the crank bot uses its own wallet here."
+          ],
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "The original unstaker. SOL is always sent here regardless of who calls."
+          ],
+          "writable": true
         },
         {
           "name": "pool",
@@ -300,7 +310,7 @@
               },
               {
                 "kind": "account",
-                "path": "user"
+                "path": "owner"
               },
               {
                 "kind": "account",

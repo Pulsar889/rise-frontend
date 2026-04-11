@@ -432,6 +432,13 @@ export function useRewards() {
     const userRiseSolAccount = await getAssociatedTokenAddress(pool.riseSolMint as PublicKey, publicKey);
     const userRiseAccount    = await getAssociatedTokenAddress(riseMint, publicKey);
 
+    // Create RISE ATA if it doesn't exist yet
+    const { createAssociatedTokenAccountInstruction } = await import("@solana/spl-token");
+    const riseAtaInfo = await connection.getAccountInfo(userRiseAccount);
+    const preIx = riseAtaInfo
+      ? []
+      : [createAssociatedTokenAccountInstruction(publicKey, userRiseAccount, publicKey, riseMint)];
+
     await staking.methods
       .claimStakeRewards()
       .accounts({
@@ -444,8 +451,9 @@ export function useRewards() {
         userRiseAccount,
         tokenProgram:       TOKEN_PROGRAM_ID,
       })
+      .preInstructions(preIx)
       .rpc();
-  }, [wallet, publicKey]);
+  }, [wallet, publicKey, connection]);
 
   /**
    * Claims RISE rewards from every gauge where the user has a positive claimable balance,
@@ -468,11 +476,20 @@ export function useRewards() {
       const configPda       = deriveRewardsConfig();
       const vaultPda        = deriveRewardsVault();
 
+      // Create RISE ATA if it doesn't exist yet
+      const { createAssociatedTokenAccountInstruction } = await import("@solana/spl-token");
+      const riseAtaInfo = await connection.getAccountInfo(userRiseAccount);
+      const createAtaIx = riseAtaInfo
+        ? null
+        : createAssociatedTokenAccountInstruction(publicKey, userRiseAccount, publicKey, riseMint);
+
       // Claim LP gauge rewards
+      let ataCreated = riseAtaInfo !== null;
       for (const gauge of claimable) {
         const gaugePda = new PublicKey(gauge.id);
         const stakePda = deriveUserStake(publicKey, gaugePda);
         try {
+          const preIx = (!ataCreated && createAtaIx) ? [createAtaIx] : [];
           await rewards.methods
             .claimRewards()
             .accounts({
@@ -484,7 +501,9 @@ export function useRewards() {
               userRiseAccount,
               tokenProgram:     TOKEN_PROGRAM_ID,
             })
+            .preInstructions(preIx)
             .rpc();
+          ataCreated = true;
         } catch {
           // Gauge had no claimable rewards on-chain yet — continue
         }

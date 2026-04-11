@@ -21,6 +21,8 @@ import {
   deriveCdpWsolBuybackVault,
   deriveProtocolTreasury,
   deriveJupiterEventAuthority,
+  deriveBorrowRewardsConfig,
+  deriveBorrowRewards,
 } from "@/lib/pdas";
 
 export type HealthStatus = "healthy" | "warning" | "danger";
@@ -263,8 +265,8 @@ export function useCdp() {
   /** Opens a new CDP position. Derives all accounts from collateral symbol. */
   const openPosition = useCallback(async (
     collateralSymbol: string,
-    collateralAmount: number,  // token native units (e.g. USDC: 1_000_000 = $1)
-    borrowAmount: number,       // riseSOL lamports to mint
+    collateralAmount: number,  // human-readable units (e.g. 5.0 for 5 SOL)
+    borrowAmount: number,      // human-readable riseSOL (e.g. 1.5 for 1.5 riseSOL)
   ) => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
     const collateralInfo = MOCK_COLLATERALS.find((c) => c.symbol === collateralSymbol);
@@ -277,6 +279,10 @@ export function useCdp() {
       const staking     = getStakingProgram(provider);
       const nonce       = nextPositionNonce;
 
+      // Convert human-readable amounts to native token units
+      const collateralLamports = Math.round(collateralAmount * Math.pow(10, collateralInfo.decimals));
+      const borrowLamports     = Math.round(borrowAmount * LAMPORTS_PER_SOL);
+
       const collateralMint  = new PublicKey(collateralInfo.mint);
       const globalPool      = deriveGlobalPool();
       const cdpConfig       = deriveCdpConfig();
@@ -287,9 +293,11 @@ export function useCdp() {
 
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
       const borrowerRiseSolAccount    = await getAssociatedTokenAddress(riseSolMint, publicKey);
+      const borrowRewardsConfig       = deriveBorrowRewardsConfig();
+      const borrowRewards             = deriveBorrowRewards(position);
 
       await cdp.methods
-        .openPosition(new BN(collateralAmount), new BN(borrowAmount), nonce)
+        .openPosition(new BN(collateralLamports), new BN(borrowLamports), nonce)
         .accounts({
           borrower: publicKey,
           cdpConfig,
@@ -304,6 +312,8 @@ export function useCdp() {
           solPriceFeed,
           riseSolMint,
           borrowerRiseSolAccount,
+          borrowRewardsConfig,
+          borrowRewards,
           stakingProgram:            getProgramPublicKeys().staking,
           tokenProgram:              TOKEN_PROGRAM_ID,
           systemProgram:             SystemProgram.programId,

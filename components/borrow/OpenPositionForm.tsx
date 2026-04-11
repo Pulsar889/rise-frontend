@@ -16,6 +16,7 @@ export function OpenPositionForm() {
   const { collaterals, pricesLoaded, openPosition, loading } = useCdp();
   const { data: staking } = useStaking();
   const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
+  const [txError, setTxError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!publicKey || !config) { setWalletBalance(undefined); return; }
@@ -61,9 +62,14 @@ export function OpenPositionForm() {
 
   async function handleOpen() {
     if (!collateral || !borrow) return;
-    await openPosition(selectedCollateral, collateralNum, borrowNum);
-    setCollateral("");
-    setBorrow("");
+    setTxError(null);
+    try {
+      await openPosition(selectedCollateral, collateralNum, borrowNum);
+      setCollateral("");
+      setBorrow("");
+    } catch (err: any) {
+      setTxError(err?.message ?? "Transaction failed");
+    }
   }
 
   return (
@@ -122,6 +128,12 @@ export function OpenPositionForm() {
           <span className={`font-semibold ${overLtv ? "text-red-400" : "text-[#F1F5F9]"}`}>
             {currentLtv.toFixed(1)}% / {config?.ltv}% max
           </span>
+        </div>
+      )}
+
+      {txError && (
+        <div className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 break-all">
+          {txError}
         </div>
       )}
 

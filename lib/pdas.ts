@@ -69,6 +69,14 @@ export function deriveBorrowRewardsConfig(): PublicKey {
   )[0];
 }
 
+/** BorrowRewards PDA — one per position, seeded by the position PDA. */
+export function deriveBorrowRewards(position: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("borrow_rewards"), position.toBuffer()],
+    CDP_PROGRAM_ID
+  )[0];
+}
+
 export function deriveCdpFeeVault(): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("cdp_fee_vault")],

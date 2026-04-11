@@ -13,7 +13,7 @@ function SkeletonBox() {
 
 export default function StakePage() {
   const [mode, setMode] = useState<"stake" | "unstake">("stake");
-  const { data, fetching, fetchError, protocolInitialized } = useStaking();
+  const { data, loading, fetching, fetchError, protocolInitialized, stake, unstake } = useStaking();
   const { connected } = useWallet();
 
   const isInitialLoad = fetching && protocolInitialized === null;
@@ -109,7 +109,10 @@ export default function StakePage() {
               Unstake
             </button>
           </div>
-          {mode === "stake" ? <StakeForm /> : <UnstakeForm />}
+          {mode === "stake"
+            ? <StakeForm data={data} loading={loading} stake={stake} />
+            : <UnstakeForm data={data} loading={loading} unstake={unstake} />
+          }
         </Card>
 
         {/* Info panel */}

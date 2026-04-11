@@ -1,6 +1,14 @@
 import { PublicKey } from "@solana/web3.js";
 import { PROGRAM_IDS, JUPITER_PROGRAM_ID } from "./constants";
 
+// Browser Buffer polyfill doesn't support writeBigUInt64LE — encode manually.
+function u64LEBuffer(value: bigint): Buffer {
+  const buf = Buffer.alloc(8);
+  buf.writeUInt32LE(Number(value & BigInt(0xffffffff)), 0);
+  buf.writeUInt32LE(Number((value >> BigInt(32)) & BigInt(0xffffffff)), 4);
+  return buf;
+}
+
 export const CDP_PROGRAM_ID        = new PublicKey(PROGRAM_IDS.RISE_CDP);
 export const STAKING_PROGRAM_ID    = new PublicKey(PROGRAM_IDS.RISE_STAKING);
 export const GOVERNANCE_PROGRAM_ID = new PublicKey(PROGRAM_IDS.RISE_GOVERNANCE);
@@ -39,10 +47,8 @@ export function deriveProtocolTreasury(): PublicKey {
 /** WithdrawalTicket PDA — one per unstake, keyed by owner + nonce.
  *  On-chain seed: &pool.unstake_nonce.to_le_bytes() — 8-byte u64 little-endian. */
 export function deriveWithdrawalTicket(owner: PublicKey, nonce: bigint): PublicKey {
-  const nonceBuf = Buffer.alloc(8);
-  nonceBuf.writeBigUInt64LE(nonce);
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("withdrawal_ticket"), owner.toBuffer(), nonceBuf],
+    [Buffer.from("withdrawal_ticket"), owner.toBuffer(), u64LEBuffer(nonce)],
     STAKING_PROGRAM_ID
   )[0];
 }
@@ -164,10 +170,8 @@ export function deriveGaugeVotePda(owner: PublicKey): PublicKey {
  * Matches: seeds = [b"proposal", &config.proposal_count.to_le_bytes()]
  */
 export function deriveProposal(index: number): PublicKey {
-  const indexBuf = Buffer.alloc(8);
-  indexBuf.writeBigUInt64LE(BigInt(index));
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("proposal"), indexBuf],
+    [Buffer.from("proposal"), u64LEBuffer(BigInt(index))],
     GOVERNANCE_PROGRAM_ID
   )[0];
 }

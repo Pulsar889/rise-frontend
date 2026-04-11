@@ -2,14 +2,19 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { TokenInput } from "@/components/ui/TokenInput";
-import { useStaking } from "@/hooks/useStaking";
+import type { StakingData } from "@/hooks/useStaking";
 
-export function StakeForm() {
+interface StakeFormProps {
+  data: StakingData;
+  loading: boolean;
+  stake: (solAmount: number) => Promise<void>;
+}
+
+export function StakeForm({ data, loading, stake }: StakeFormProps) {
   const [amount, setAmount] = useState("");
   const [txError, setTxError] = useState<string | null>(null);
   const [txSuccess, setTxSuccess] = useState(false);
   const { publicKey } = useWallet();
-  const { data, loading, stake } = useStaking();
 
   const num = parseFloat(amount) || 0;
   const riseSolReceived = num > 0 ? (num / data.exchangeRate).toFixed(4) : "0.0000";

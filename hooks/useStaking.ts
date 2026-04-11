@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useWallet, useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, Keypair } from "@solana/web3.js";
@@ -42,6 +42,8 @@ const EMPTY_DATA: StakingData = {
 export function useStaking() {
   const [data, setData] = useState<StakingData>(EMPTY_DATA);
   const [loading, setLoading] = useState(false);
+  const stakeSubmitting = useRef(false);
+  const refreshing = useRef(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   // null = unknown (initial load); true/false = pool exists or not
@@ -54,6 +56,8 @@ export function useStaking() {
   const { connection } = useConnection();
 
   const refresh = useCallback(async () => {
+    if (refreshing.current) return;
+    refreshing.current = true;
     setFetching(true);
     setFetchError(null);
     try {
@@ -150,6 +154,7 @@ export function useStaking() {
       setFetchError(err?.message ?? "Failed to load staking data");
     } finally {
       setFetching(false);
+      refreshing.current = false;
     }
   }, [wallet, publicKey, connection]);
 
@@ -160,6 +165,8 @@ export function useStaking() {
 
   const stake = useCallback(async (solAmount: number) => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
+    if (stakeSubmitting.current) return;
+    stakeSubmitting.current = true;
     setLoading(true);
     try {
       const provider  = getProvider(wallet);
@@ -216,6 +223,7 @@ export function useStaking() {
       await refresh();
     } finally {
       setLoading(false);
+      stakeSubmitting.current = false;
     }
   }, [wallet, publicKey, connection, refresh]);
 

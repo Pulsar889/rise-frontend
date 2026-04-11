@@ -86,6 +86,7 @@ export function useStaking() {
         liquidBufferLamports: BN;
         prevExchangeRate: BN;
         prevRateUpdateSlot: BN;
+        unstakeNonce: BN;
       };
 
       const RATE_SCALE      = 1_000_000_000;
@@ -121,20 +122,24 @@ export function useStaking() {
         const ataInfo = await connection.getTokenAccountBalance(ata).catch(() => null);
         if (ataInfo) riseSolBalance = ataInfo.value.uiAmount ?? 0;
 
-        // Fetch all WithdrawalTicket accounts owned by this wallet.
-        // Layout: [8 discriminator][32 owner] → memcmp at offset 8.
-        const rawTickets = await (program.account as any)["withdrawalTicket"].all([
-          { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
-        ]);
-        const tickets: WithdrawalTicket[] = rawTickets.map((raw: any) => {
-          const nonce = BigInt(raw.account.nonce.toString());
-          return {
-            nonce,
-            address:        deriveWithdrawalTicket(publicKey, nonce),
-            solAmount:      raw.account.solAmount.toNumber() / LAMPORTS_PER_SOL,
-            claimableEpoch: raw.account.claimableEpoch.toNumber(),
-          };
-        });
+        // Derive all possible ticket PDAs from nonce range — no getProgramAccounts needed.
+        // pool.unstakeNonce is the next nonce to be used, so tickets exist for 0..(nonce-1).
+        const unstakeNonce = BigInt(raw.unstakeNonce.toString());
+        const ticketPdas: PublicKey[] = [];
+        for (let n = 0n; n < unstakeNonce; n++) {
+          ticketPdas.push(deriveWithdrawalTicket(publicKey, n));
+        }
+        const ticketAccounts = ticketPdas.length > 0
+          ? await (program.account as any)["withdrawalTicket"].fetchMultiple(ticketPdas)
+          : [];
+        const tickets: WithdrawalTicket[] = (ticketAccounts as any[])
+          .map((acc: any, i: number) => acc ? {
+            nonce:          BigInt(i),
+            address:        ticketPdas[i],
+            solAmount:      acc.solAmount.toNumber() / LAMPORTS_PER_SOL,
+            claimableEpoch: acc.claimableEpoch.toNumber(),
+          } : null)
+          .filter(Boolean) as WithdrawalTicket[];
         setPendingTickets(tickets);
       }
 

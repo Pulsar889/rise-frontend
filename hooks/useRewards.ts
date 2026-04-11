@@ -115,36 +115,40 @@ export function useRewards() {
       const riseMint          = config.riseMint as PublicKey;
       setEpochEmissions(epochEmissionsRaw / LAMPORTS_PER_SOL);
 
-      // ── All Gauge accounts ──────────────────────────────────────────────────
-      // Filter to gauges belonging to the current config (index < gauge_count).
-      // Orphaned gauge accounts from previous reset runs are excluded this way.
+      // ── All Gauge accounts — fetched directly by known PDA, no getProgramAccounts ──
       const gaugeCount: number = config.gaugeCount.toNumber();
-      const rawGauges = ((await (rewards.account as any)["gauge"].all()) as any[])
-        .filter((raw: any) => raw.account.index.toNumber() < gaugeCount);
+      const knownPools = Object.keys(GAUGE_META).map(p => new PublicKey(p));
+      const gaugePdas  = knownPools.map(pool => deriveGaugePda(pool));
+      const gaugeAccountsRaw = await (rewards.account as any)["gauge"].fetchMultiple(gaugePdas);
 
-      // ── UserStake accounts for connected wallet ─────────────────────────────
-      // Layout: [8 discriminator][32 owner][32 gauge] → memcmp at offset 8 for owner
-      const stakeByGauge = new Map<string, any>(); // gaugePDA → raw stake account
+      // Pair each result with its PDA; filter nulls and orphans (index >= gauge_count)
+      const rawGauges = gaugePdas
+        .map((pda, i) => ({ publicKey: pda, account: gaugeAccountsRaw[i] }))
+        .filter(({ account }) => account !== null && (account as any).index.toNumber() < gaugeCount);
+
+      // ── UserStake accounts — derived directly from (user, gaugePda) ──────────
+      const stakeByGauge = new Map<string, any>();
       const mappedStakes: UserStake[] = [];
 
       if (publicKey) {
-        const rawStakes = await (rewards.account as any)["userStake"].all([
-          { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
-        ]);
+        const userStakePdas = rawGauges.map(({ publicKey: gaugePda }) =>
+          deriveUserStake(publicKey, gaugePda)
+        );
+        const userStakeAccounts = await (rewards.account as any)["userStake"].fetchMultiple(userStakePdas);
 
-        for (const raw of rawStakes) {
-          const acc        = raw.account;
-          const gaugePdaStr = (acc.gauge as PublicKey).toBase58();
+        rawGauges.forEach(({ publicKey: gaugePda }, i) => {
+          const acc = userStakeAccounts[i];
+          if (!acc) return;
+          const gaugePdaStr = gaugePda.toBase58();
           stakeByGauge.set(gaugePdaStr, acc);
-
           mappedStakes.push({
-            id:             raw.publicKey.toBase58(),
+            id:             deriveUserStake(publicKey, gaugePda).toBase58(),
             gauge:          gaugePdaStr,
-            lpAmount:       acc.lpAmount.toNumber() / LAMPORTS_PER_SOL,
-            rewardDebt:     BigInt(acc.rewardDebt.toString()),
-            pendingRewards: acc.pendingRewards.toNumber() / LAMPORTS_PER_SOL,
+            lpAmount:       (acc as any).lpAmount.toNumber() / LAMPORTS_PER_SOL,
+            rewardDebt:     BigInt((acc as any).rewardDebt.toString()),
+            pendingRewards: (acc as any).pendingRewards.toNumber() / LAMPORTS_PER_SOL,
           });
-        }
+        });
       }
 
       setUserStakes(mappedStakes);
@@ -158,9 +162,8 @@ export function useRewards() {
       // ── Map gauges + compute pending rewards ────────────────────────────────
       let totalClaimableAccum = 0;
 
-      const mappedGauges: LpGauge[] = rawGauges.map((raw: any, i: number) => {
-          const acc            = raw.account;
-          const gaugePdaStr    = raw.publicKey.toBase58();
+      const mappedGauges: LpGauge[] = rawGauges.map(({ publicKey: gaugePda, account: acc }: any, i: number) => {
+          const gaugePdaStr    = gaugePda.toBase58();
           const pool           = acc.pool as PublicKey;
           const poolStr        = pool.toBase58();
           const index: number  = acc.index.toNumber();

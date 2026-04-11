@@ -266,7 +266,7 @@ export function useStaking() {
           userStakeRewards:   null,
           systemProgram:     SystemProgram.programId,
           tokenProgram:      TOKEN_PROGRAM_ID,
-        })
+        } as any)
         .rpc();
 
       const ticketData = await (program.account as any)["withdrawalTicket"].fetch(ticket);

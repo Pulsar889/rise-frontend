@@ -214,11 +214,10 @@ export function useStaking() {
           .preInstructions(preIx)
           .rpc();
       } catch (txErr: any) {
+        // "already processed" means Anchor retried after Phantom already confirmed — treat as success
+        if (txErr?.message?.includes("already been processed")) return;
         console.error("[stake_sol] transaction failed", txErr);
-        // Anchor wraps the on-chain error; log the inner logs if present
-        if (txErr?.logs) {
-          console.error("[stake_sol] program logs:", txErr.logs);
-        }
+        if (txErr?.logs) console.error("[stake_sol] program logs:", txErr.logs);
         throw txErr;
       }
 
@@ -267,7 +266,11 @@ export function useStaking() {
           systemProgram:     SystemProgram.programId,
           tokenProgram:      TOKEN_PROGRAM_ID,
         } as any)
-        .rpc();
+        .rpc()
+        .catch((err: any) => {
+          if (err?.message?.includes("already been processed")) return;
+          throw err;
+        });
 
       const ticketData = await (program.account as any)["withdrawalTicket"].fetch(ticket);
       const t = ticketData as { solAmount: BN; claimableEpoch: BN };

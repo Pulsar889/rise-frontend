@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
-import { useWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
+import { useWallet, useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
@@ -54,7 +54,7 @@ export interface CollateralType {
 
 
 const MOCK_COLLATERALS: CollateralType[] = [
-  { symbol: "SOL",     name: "Solana",       mint: SystemProgram.programId.toBase58(), ltv: 75, liquidationThreshold: 85, priceUsd: 182,    decimals: 9 },
+  { symbol: "SOL",     name: "Solana",       mint: WSOL_MINT,                          ltv: 75, liquidationThreshold: 85, priceUsd: 182,    decimals: 9 },
   { symbol: "mSOL",    name: "Marinade SOL", mint: "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So", ltv: 78, liquidationThreshold: 87, priceUsd: 195, decimals: 9 },
   { symbol: "JitoSOL", name: "Jito SOL",     mint: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn", ltv: 78, liquidationThreshold: 87, priceUsd: 190, decimals: 9 },
   { symbol: "wETH",    name: "Wrapped ETH",  mint: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", ltv: 70, liquidationThreshold: 80, priceUsd: 3_180,  decimals: 8 },
@@ -111,6 +111,7 @@ export function useCdp() {
 
   const wallet = useAnchorWallet();
   const { publicKey } = useWallet();
+  const { connection } = useConnection();
 
   // ── On-chain reads ─────────────────────────────────────────────────────────
 
@@ -296,6 +297,33 @@ export function useCdp() {
       const borrowRewardsConfig       = deriveBorrowRewardsConfig();
       const borrowRewards             = deriveBorrowRewards(position);
 
+      // If collateral is SOL, wrap it to WSOL before depositing
+      const preInstructions = [];
+      const postInstructions = [];
+      const isWsol = collateralMint.toBase58() === WSOL_MINT;
+      if (isWsol) {
+        const {
+          createAssociatedTokenAccountInstruction,
+          createSyncNativeInstruction,
+          createCloseAccountInstruction,
+        } = await import("@solana/spl-token");
+
+        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
+        if (!wsolAtaInfo) {
+          preInstructions.push(
+            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
+          );
+        }
+        preInstructions.push(
+          SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }),
+          createSyncNativeInstruction(borrowerCollateralAccount),
+        );
+        // Close the WSOL ATA after deposit to reclaim rent (~0.002 SOL)
+        postInstructions.push(
+          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
+        );
+      }
+
       await cdp.methods
         .openPosition(new BN(collateralLamports), new BN(borrowLamports), nonce)
         .accounts({
@@ -318,6 +346,8 @@ export function useCdp() {
           tokenProgram:              TOKEN_PROGRAM_ID,
           systemProgram:             SystemProgram.programId,
         })
+        .preInstructions(preInstructions)
+        .postInstructions(postInstructions)
         .rpc();
 
       setNextPositionNonce((n) => n + 1);

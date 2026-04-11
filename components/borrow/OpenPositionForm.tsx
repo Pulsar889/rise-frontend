@@ -6,6 +6,7 @@ import { PublicKey, LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import { TokenInput } from "@/components/ui/TokenInput";
 import { useCdp } from "@/hooks/useCdp";
 import { useStaking } from "@/hooks/useStaking";
+import { WSOL_MINT } from "@/lib/constants";
 
 export function OpenPositionForm() {
   const [collateral, setCollateral] = useState("");
@@ -21,7 +22,7 @@ export function OpenPositionForm() {
   useEffect(() => {
     if (!publicKey || !config) { setWalletBalance(undefined); return; }
     const mint = config.mint;
-    if (mint === SystemProgram.programId.toBase58()) {
+    if (mint === WSOL_MINT) {
       // Native SOL — reserve 0.01 SOL for fees
       connection.getBalance(publicKey).then((lamports) => {
         setWalletBalance(Math.max(0, lamports / LAMPORTS_PER_SOL - 0.01));

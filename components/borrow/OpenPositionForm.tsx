@@ -139,7 +139,7 @@ export function OpenPositionForm() {
         token="riseSOL"
         value={borrow}
         onChange={handleBorrowChange}
-        max={pricesLoaded && maxBorrow > 0 ? maxBorrow : undefined}
+        max={pricesLoaded && maxBorrow !== undefined && maxBorrow > 0 ? maxBorrow : undefined}
       />
 
       {/* Collateral — autofills when borrow is typed */}

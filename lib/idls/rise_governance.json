@@ -446,6 +446,98 @@
       "args": []
     },
     {
+      "name": "close_rise_vault",
+      "docs": [
+        "Authority-only: burn any tokens in rise_vault (wrong mint), close it,",
+        "and reclaim rent.  Used for devnet re-initialization."
+      ],
+      "discriminator": [
+        99,
+        166,
+        217,
+        170,
+        227,
+        24,
+        3,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_vault",
+          "docs": [
+            "The vault to close.  Seeds verified so we can't be pointed at an",
+            "arbitrary token account."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  105,
+                  115,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "rise_vault_mint",
+          "docs": [
+            "The mint currently held by the vault (needed for the burn CPI)."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "create_proposal",
       "discriminator": [
         132,

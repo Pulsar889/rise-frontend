@@ -391,7 +391,14 @@ export function useGovernance() {
           };
         });
 
-      setProposals(mappedProposals);
+      // Use functional update so an existing optimistic myVote isn't wiped if the
+      // RPC hasn't synced the VoteRecord yet (common on devnet after a fast vote).
+      setProposals((prev) =>
+        mappedProposals.map((mp) => {
+          const existing = prev.find((p) => p.id === mp.id);
+          return existing?.myVote && !mp.myVote ? { ...mp, myVote: existing.myVote } : mp;
+        })
+      );
     } catch (err: any) {
       setFetchError(err?.message ?? "Failed to load governance data");
     } finally {

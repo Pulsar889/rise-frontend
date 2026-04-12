@@ -315,19 +315,29 @@ export function useGovernance() {
         return;
       }
 
-      // VoteRecord layout: [8 discriminator][32 voter] → build map proposalPDA → vote_for
+      // Fetch VoteRecord PDAs directly for each (lock, proposal) pair.
+      // More reliable than voteRecord.all() with a memcmp filter — avoids devnet
+      // RPC caching issues and guarantees we find records that exist on-chain.
+      // VoteRecord layout: [8 disc][32 voter][32 lock][32 proposal][8 verise_at_vote][1 vote_for][1 bump]
+      // vote_for byte is at offset 112.
       const voteRecordMap = new Map<string, boolean>();
-      if (publicKey) {
-        try {
-          const voteRecords = await (gov.account as any)["voteRecord"].all([
-            { memcmp: { offset: 8, bytes: publicKey.toBase58() } },
-          ]);
-          for (const vr of voteRecords) {
-            voteRecordMap.set((vr.account.proposal as PublicKey).toBase58(), vr.account.voteFor as boolean);
-          }
-        } catch {
-          // No vote records yet
-        }
+      if (publicKey && mappedLocks.length > 0 && proposalCount > 0) {
+        const proposalPdas = Array.from({ length: proposalCount }, (_, i) => deriveProposal(i));
+        await Promise.all(
+          mappedLocks.flatMap((lock) =>
+            proposalPdas.map(async (proposalPda) => {
+              try {
+                const vrPda = deriveVoteRecord(deriveVeLock(publicKey, lock.nonce), proposalPda);
+                const info  = await connection.getAccountInfo(vrPda);
+                if (info && info.data.length >= 113) {
+                  voteRecordMap.set(proposalPda.toBase58(), info.data[112] !== 0);
+                }
+              } catch {
+                // No vote record for this (lock, proposal) pair — skip
+              }
+            })
+          )
+        );
       }
 
       // Fetch proposals 0 … proposalCount-1 in parallel

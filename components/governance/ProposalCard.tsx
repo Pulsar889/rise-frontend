@@ -72,39 +72,35 @@ export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
           </div>
         </div>
 
-        {/* Vote buttons (active proposals only) */}
+        {/* Vote section (active proposals only) */}
         {proposal.status === "active" && (
           <div className="flex flex-col gap-2">
-            {voteSuccess && (
-              <p className="text-sm font-medium text-emerald-400 text-center">
-                Vote cast {voteSuccess === "for" ? "For" : "Against"}!
-              </p>
-            )}
             {voteError && (
               <p className="text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2 break-all">{voteError}</p>
             )}
-            {!voteSuccess && proposal.myVote && (
-              <p className="text-xs text-[#94A3B8] text-center">
-                You voted <span className={`font-semibold ${proposal.myVote === "for" ? "text-emerald-400" : "text-red-400"}`}>
+            {proposal.myVote ? (
+              <p className="text-sm font-medium text-center text-[#94A3B8]">
+                You voted{" "}
+                <span className={`font-semibold ${proposal.myVote === "for" ? "text-emerald-400" : "text-red-400"}`}>
                   {proposal.myVote === "for" ? "For" : "Against"}
                 </span>
+                {voteSuccess && <span className="text-emerald-400"> ✓</span>}
               </p>
-            )}
-            {!proposal.myVote && (
+            ) : (
               <div className="flex gap-3">
                 <button
                   onClick={() => handleVote(true)}
                   disabled={loading}
                   className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors bg-emerald-950 text-emerald-400 hover:bg-emerald-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Vote For
+                  {loading ? "Voting…" : "Vote For"}
                 </button>
                 <button
                   onClick={() => handleVote(false)}
                   disabled={loading}
                   className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors bg-red-950 text-red-400 hover:bg-red-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Vote Against
+                  {loading ? "Voting…" : "Vote Against"}
                 </button>
               </div>
             )}

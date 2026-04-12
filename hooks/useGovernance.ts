@@ -567,7 +567,13 @@ export function useGovernance() {
         })
         .rpc();
 
-      await refresh();
+      // Optimistically update myVote so the UI responds immediately
+      setProposals((prev) =>
+        prev.map((p) => p.id === proposalId ? { ...p, myVote: support ? "for" : "against" } : p)
+      );
+
+      // Refresh in background — don't await so errors don't swallow the success
+      refresh().catch(() => {});
     } finally {
       setLoadingVote(null);
     }

@@ -26,11 +26,17 @@ const STATUS_STYLES: Record<string, string> = {
 
 export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
   const [voteSuccess, setVoteSuccess] = useState<"for" | "against" | null>(null);
+  const [voteError, setVoteError] = useState<string | null>(null);
 
   async function handleVote(support: boolean) {
-    await vote(proposal.id, support);
-    setVoteSuccess(support ? "for" : "against");
-    setTimeout(() => setVoteSuccess(null), 4000);
+    setVoteError(null);
+    try {
+      await vote(proposal.id, support);
+      setVoteSuccess(support ? "for" : "against");
+      setTimeout(() => setVoteSuccess(null), 4000);
+    } catch (err: unknown) {
+      setVoteError(err instanceof Error ? err.message : "Vote failed");
+    }
   }
 
   const forPct     = proposal.totalVotes > 0 ? (proposal.votesFor / proposal.totalVotes) * 100 : 0;
@@ -73,6 +79,9 @@ export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
               <p className="text-sm font-medium text-emerald-400 text-center">
                 Vote cast {voteSuccess === "for" ? "For" : "Against"}!
               </p>
+            )}
+            {voteError && (
+              <p className="text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2 break-all">{voteError}</p>
             )}
             {!voteSuccess && proposal.myVote && (
               <p className="text-xs text-[#94A3B8] text-center">

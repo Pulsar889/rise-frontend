@@ -516,19 +516,24 @@ export function useGovernance() {
       const riseMint  = config.riseMint as PublicKey;
       const nftMint   = new PublicKey(lock.nftMint);
 
-      await gov.methods
-        .unlockRise()
-        .accounts({
-          user:            publicKey,
-          config:          configPda,
-          lock:            new PublicKey(lockId),
-          userRiseAccount: await getAssociatedTokenAddress(riseMint, publicKey),
-          riseVault:       deriveRiseVaultGov(),
-          nftMint,
-          userNftAta:      await getAssociatedTokenAddress(nftMint, publicKey),
-          tokenProgram:    TOKEN_PROGRAM_ID,
-        })
-        .rpc();
+      try {
+        await gov.methods
+          .unlockRise()
+          .accounts({
+            user:            publicKey,
+            config:          configPda,
+            lock:            new PublicKey(lockId),
+            userRiseAccount: await getAssociatedTokenAddress(riseMint, publicKey),
+            riseVault:       deriveRiseVaultGov(),
+            nftMint,
+            userNftAta:      await getAssociatedTokenAddress(nftMint, publicKey),
+            tokenProgram:    TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("already been processed")) throw err;
+      }
 
       await refresh();
     } finally {
@@ -548,14 +553,19 @@ export function useGovernance() {
     const provider = getProvider(wallet);
     const gov      = getGovernanceProgram(provider);
 
-    await gov.methods
-      .extendLock(new BN(additionalSlots))
-      .accounts({
-        user:   publicKey,
-        config: deriveGovernanceConfig(),
-        lock:   new PublicKey(lockId),
-      })
-      .rpc();
+    try {
+      await gov.methods
+        .extendLock(new BN(additionalSlots))
+        .accounts({
+          user:   publicKey,
+          config: deriveGovernanceConfig(),
+          lock:   new PublicKey(lockId),
+        })
+        .rpc();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes("already been processed")) throw err;
+    }
 
     await refresh();
   }, [wallet, publicKey, locks, refresh]);
@@ -683,16 +693,21 @@ export function useGovernance() {
         };
       });
 
-      await gov.methods
-        .voteGauge(allocations)
-        .accounts({
-          user:          publicKey,
-          config:        deriveGovernanceConfig(),
-          lock:          deriveVeLock(publicKey, activeLock.nonce),
-          gaugeVote:     deriveGaugeVotePda(publicKey),
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      try {
+        await gov.methods
+          .voteGauge(allocations)
+          .accounts({
+            user:          publicKey,
+            config:        deriveGovernanceConfig(),
+            lock:          deriveVeLock(publicKey, activeLock.nonce),
+            gaugeVote:     deriveGaugeVotePda(publicKey),
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("already been processed")) throw err;
+      }
 
       await refresh();
     } finally {
@@ -725,16 +740,21 @@ export function useGovernance() {
       const proposalPda = deriveProposal(config.proposalCount.toNumber());
       const target = new PublicKey(targetProgram);
 
-      await gov.methods
-        .createProposal(descBytes, target)
-        .accounts({
-          proposer:      publicKey,
-          config:        configPda,
-          lock:          deriveVeLock(publicKey, activeLock.nonce),
-          proposal:      proposalPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      try {
+        await gov.methods
+          .createProposal(descBytes, target)
+          .accounts({
+            proposer:      publicKey,
+            config:        configPda,
+            lock:          deriveVeLock(publicKey, activeLock.nonce),
+            proposal:      proposalPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("already been processed")) throw err;
+      }
 
       // Optimistically prepend the new proposal so it appears immediately
       const votingPeriodSlots = config.votingPeriodSlots.toNumber();

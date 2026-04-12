@@ -35,6 +35,8 @@ const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzj
 const SLOTS_PER_WEEK = 604_800;
 // Approximate ms between slots on Solana (used only for Date estimation)
 const MS_PER_SLOT = 400;
+// RISE token has 6 decimals (NOT 9 like SOL)
+const RISE_SCALE = 1_000_000;
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -166,8 +168,8 @@ export function useGovernance() {
 
       const config        = await (gov.account as any)["governanceConfig"].fetch(configPda);
       const totalVeriseBig = BigInt(config.totalVerise.toString());
-      // Human-readable veRISE: divide by 1e9 (same lamport scale as RISE token)
-      const totalVeriseDisplay = Number((totalVeriseBig * 1000n) / BigInt(LAMPORTS_PER_SOL)) / 1000;
+      // Human-readable veRISE: RISE has 6 decimals
+      const totalVeriseDisplay = Number((totalVeriseBig * 1000n) / BigInt(RISE_SCALE)) / 1000;
       setTotalVerise(totalVeriseDisplay);
 
       const proposalCount: number = config.proposalCount.toNumber();
@@ -241,8 +243,8 @@ export function useGovernance() {
             id:                  raw.publicKey.toBase58(),
             nonce,
             lockNumber,
-            lockedRise:          acc.riseLocked.toNumber() / LAMPORTS_PER_SOL,
-            veRisePower:         currentVeriseRaw / LAMPORTS_PER_SOL,
+            lockedRise:          acc.riseLocked.toNumber() / RISE_SCALE,
+            veRisePower:         currentVeriseRaw / RISE_SCALE,
             lockWeeks:           Math.round((lockEndSlot - lockStartSlot) / SLOTS_PER_WEEK),
             lockStartSlot,
             lockEndSlot,
@@ -381,9 +383,9 @@ export function useGovernance() {
             title,
             description,
             status,
-            votesFor:     Number(votesForBig)     / LAMPORTS_PER_SOL,
-            votesAgainst: Number(votesAgainstBig) / LAMPORTS_PER_SOL,
-            totalVotes:   Number(totalVotesBig)   / LAMPORTS_PER_SOL,
+            votesFor:     Number(votesForBig)     / RISE_SCALE,
+            votesAgainst: Number(votesAgainstBig) / RISE_SCALE,
+            totalVotes:   Number(totalVotesBig)   / RISE_SCALE,
             endsAt:      slotToDate(votingEndSlot),
             myVote:      myVoteFor !== undefined ? (myVoteFor ? "for" : "against") : undefined,
           };
@@ -438,26 +440,34 @@ export function useGovernance() {
         TOKEN_METADATA_PROGRAM_ID
       );
 
-      await gov.methods
-        .lockRise(new BN(amount * LAMPORTS_PER_SOL), new BN(lockSlots), nonce)
-        .accounts({
-          user:                   publicKey,
-          config:                 configPda,
-          lock:                   deriveVeLock(publicKey, nonce),
-          userRiseAccount,
-          riseVault:              deriveRiseVaultGov(),
-          nftMint:                nftMintKp.publicKey,
-          userNftAta,
-          nftMetadata,
-          tokenMetadataProgram:   TOKEN_METADATA_PROGRAM_ID,
-          treasury:               deriveProtocolTreasury(),
-          tokenProgram:           TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          systemProgram:          SystemProgram.programId,
-          rent:                   SYSVAR_RENT_PUBKEY,
-        })
-        .signers([nftMintKp])
-        .rpc();
+      try {
+        await gov.methods
+          .lockRise(new BN(Math.round(amount * RISE_SCALE)), new BN(lockSlots), nonce)
+          .accounts({
+            user:                   publicKey,
+            config:                 configPda,
+            lock:                   deriveVeLock(publicKey, nonce),
+            userRiseAccount,
+            riseVault:              deriveRiseVaultGov(),
+            nftMint:                nftMintKp.publicKey,
+            userNftAta,
+            nftMetadata,
+            tokenMetadataProgram:   TOKEN_METADATA_PROGRAM_ID,
+            treasury:               deriveProtocolTreasury(),
+            tokenProgram:           TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram:          SystemProgram.programId,
+            rent:                   SYSVAR_RENT_PUBKEY,
+          })
+          .signers([nftMintKp])
+          .rpc();
+      } catch (err: unknown) {
+        // "already processed" means the tx landed on the first attempt but the
+        // SDK got a duplicate-submission error when retrying confirmation.
+        // Treat it as success and let refresh() pick up the new lock.
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("already been processed")) throw err;
+      }
 
       setNextLockNonce((n) => n + 1);
       await refresh();

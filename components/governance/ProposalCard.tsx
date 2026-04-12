@@ -35,7 +35,14 @@ export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
       setVoteSuccess(support ? "for" : "against");
       setTimeout(() => setVoteSuccess(null), 4000);
     } catch (err: unknown) {
-      setVoteError(err instanceof Error ? err.message : "Vote failed");
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("already in use")) {
+        // VoteRecord already exists — first vote landed, UI was just stale
+        setVoteSuccess(support ? "for" : "against");
+        setTimeout(() => setVoteSuccess(null), 4000);
+      } else {
+        setVoteError(msg);
+      }
     }
   }
 

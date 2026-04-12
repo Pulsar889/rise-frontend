@@ -555,19 +555,25 @@ export function useGovernance() {
       const gov         = getGovernanceProgram(provider);
       const proposalPda = new PublicKey(proposalId);
 
-      await gov.methods
-        .castVote(support)
-        .accounts({
-          voter:         publicKey,
-          config:        deriveGovernanceConfig(),
-          lock:          deriveVeLock(publicKey, activeLock.nonce),
-          proposal:      proposalPda,
-          voteRecord:    deriveVoteRecord(deriveVeLock(publicKey, activeLock.nonce), proposalPda),
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      try {
+        await gov.methods
+          .castVote(support)
+          .accounts({
+            voter:         publicKey,
+            config:        deriveGovernanceConfig(),
+            lock:          deriveVeLock(publicKey, activeLock.nonce),
+            proposal:      proposalPda,
+            voteRecord:    deriveVoteRecord(deriveVeLock(publicKey, activeLock.nonce), proposalPda),
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // "already in use" means the VoteRecord exists — first vote landed on-chain
+        if (!msg.includes("already in use")) throw err;
+      }
 
-      // Optimistically update myVote so the UI responds immediately
+      // Optimistically update myVote so buttons hide and success message shows
       setProposals((prev) =>
         prev.map((p) => p.id === proposalId ? { ...p, myVote: support ? "for" : "against" } : p)
       );

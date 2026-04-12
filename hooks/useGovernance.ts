@@ -562,7 +562,7 @@ export function useGovernance() {
           config:        deriveGovernanceConfig(),
           lock:          deriveVeLock(publicKey, activeLock.nonce),
           proposal:      proposalPda,
-          voteRecord:    deriveVoteRecord(publicKey, proposalPda),
+          voteRecord:    deriveVoteRecord(deriveVeLock(publicKey, activeLock.nonce), proposalPda),
           systemProgram: SystemProgram.programId,
         })
         .rpc();
@@ -700,6 +700,22 @@ export function useGovernance() {
           systemProgram: SystemProgram.programId,
         })
         .rpc();
+
+      // Optimistically prepend the new proposal so it appears immediately
+      const votingPeriodSlots = config.votingPeriodSlots.toNumber();
+      const endsAt = new Date(Date.now() + votingPeriodSlots * MS_PER_SLOT);
+      const optimisticProposal: Proposal = {
+        id:           proposalPda.toBase58(),
+        title:        description.slice(0, 70),
+        description,
+        status:       "active",
+        votesFor:     0,
+        votesAgainst: 0,
+        totalVotes:   0,
+        endsAt,
+        myVote:       undefined,
+      };
+      setProposals((prev) => [optimisticProposal, ...prev]);
 
       await refresh();
     } finally {

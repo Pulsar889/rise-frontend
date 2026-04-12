@@ -191,10 +191,10 @@ export function deriveProposal(index: number): PublicKey {
   )[0];
 }
 
-/** VoteRecord PDA — one per (voter, proposal) pair. */
-export function deriveVoteRecord(voter: PublicKey, proposal: PublicKey): PublicKey {
+/** VoteRecord PDA — one per (lock, proposal) pair. Matches on-chain seeds: [b"vote_record", lock.key(), proposal.key()]. */
+export function deriveVoteRecord(lock: PublicKey, proposal: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("vote_record"), voter.toBuffer(), proposal.toBuffer()],
+    [Buffer.from("vote_record"), lock.toBuffer(), proposal.toBuffer()],
     GOVERNANCE_PROGRAM_ID
   )[0];
 }

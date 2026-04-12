@@ -576,8 +576,8 @@ export function useGovernance() {
       const configPda  = deriveGovernanceConfig();
       const treasuryPda = deriveProtocolTreasury();
 
-      const [treasuryVaultPda, tvBump] = PublicKey.findProgramAddressSync(
-        [Buffer.from("treasury_vault")],
+      const [veriseVaultPda, tvBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("verise_vault")],
         STAKING_PROGRAM_ID
       );
 
@@ -587,11 +587,11 @@ export function useGovernance() {
           await gov.methods
             .claimRevenueShare(tvBump)
             .accounts({
-              user:          publicKey,
-              config:        configPda,
-              lock:          deriveVeLock(publicKey, lock.nonce),
-              treasury:      treasuryPda,
-              treasuryVault: treasuryVaultPda,
+              user:         publicKey,
+              config:       configPda,
+              lock:         deriveVeLock(publicKey, lock.nonce),
+              treasury:     treasuryPda,
+              veriseVault:  veriseVaultPda,
               systemProgram: SystemProgram.programId,
             })
             .rpc();

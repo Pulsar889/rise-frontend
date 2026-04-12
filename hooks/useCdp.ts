@@ -10,7 +10,7 @@ import { PYTH_FEED_IDS, PYTH_HERMES_URL, JUPITER_PROGRAM_ID, JUPITER_PROGRAM_AUT
 import {
   deriveGlobalPool,
   derivePoolVault,
-  deriveTreasuryVault,
+  deriveReserveVault,
   deriveCdpConfig,
   deriveCdpFeeVault,
   deriveCollateralConfig,
@@ -491,7 +491,7 @@ export function useCdp() {
             globalPool,
             poolVault:                       derivePoolVault(),
             treasury:                        deriveProtocolTreasury(),
-            treasuryVault:                   deriveTreasuryVault(),
+            reserveVault:                    deriveReserveVault(),
             wsolMint,
             cdpWsolBuybackVault,
             solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),

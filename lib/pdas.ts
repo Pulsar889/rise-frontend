@@ -30,9 +30,16 @@ export function derivePoolVault(): PublicKey {
   )[0];
 }
 
-export function deriveTreasuryVault(): PublicKey {
+export function deriveReserveVault(): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("treasury_vault")],
+    [Buffer.from("reserve_vault")],
+    STAKING_PROGRAM_ID
+  )[0];
+}
+
+export function deriveVeriseVault(): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("verise_vault")],
     STAKING_PROGRAM_ID
   )[0];
 }

@@ -391,14 +391,19 @@ export function useGovernance() {
           };
         });
 
-      // Use functional update so an existing optimistic myVote isn't wiped if the
-      // RPC hasn't synced the VoteRecord yet (common on devnet after a fast vote).
-      setProposals((prev) =>
-        mappedProposals.map((mp) => {
+      // Use functional update to handle two RPC lag cases:
+      // 1. myVote: preserve an optimistic vote if the VoteRecord hasn't synced yet
+      // 2. new proposals: preserve any optimistic proposals not yet returned by
+      //    refresh (proposalCount in GovernanceConfig may not have updated yet)
+      setProposals((prev) => {
+        const refreshedIds = new Set(mappedProposals.map((mp) => mp.id));
+        const optimisticOnly = prev.filter((p) => !refreshedIds.has(p.id));
+        const merged = mappedProposals.map((mp) => {
           const existing = prev.find((p) => p.id === mp.id);
           return existing?.myVote && !mp.myVote ? { ...mp, myVote: existing.myVote } : mp;
-        })
-      );
+        });
+        return [...optimisticOnly, ...merged];
+      });
     } catch (err: any) {
       setFetchError(err?.message ?? "Failed to load governance data");
     } finally {
@@ -576,8 +581,9 @@ export function useGovernance() {
           .rpc();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        // "already in use" means the VoteRecord exists — first vote landed on-chain
-        if (!msg.includes("already in use")) throw err;
+        // Both errors mean the VoteRecord already exists on-chain — tx landed,
+        // SDK just couldn't confirm cleanly. Treat as success.
+        if (!msg.includes("already in use") && !msg.includes("already been processed")) throw err;
       }
 
       // Optimistically update myVote so buttons hide and success message shows

@@ -8,6 +8,7 @@ const MAX_WEEKS = 208; // 4 years
 export function LockForm() {
   const [amount, setAmount] = useState("");
   const [Weeks, setWeeks] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { lockRise, loadingLock: loading, riseBalance } = useGovernance();
 
   const num = parseFloat(amount) || 0;
@@ -25,9 +26,15 @@ export function LockForm() {
 
   async function handleLock() {
     if (num <= 0 || !WeeksValid) return;
-    await lockRise(num, WeeksNum * 7);
-    setAmount("");
-    setWeeks("");
+    setError(null);
+    try {
+      await lockRise(num, WeeksNum * 7);
+      setAmount("");
+      setWeeks("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+    }
   }
 
   return (
@@ -79,6 +86,10 @@ export function LockForm() {
 
       {riseBalance === 0 && (
         <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">You have no RISE to lock.</p>
+      )}
+
+      {error && (
+        <p className="text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2 break-all">{error}</p>
       )}
 
       <button

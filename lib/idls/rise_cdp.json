@@ -1427,21 +1427,82 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "reserve_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  116,
                   114,
                   101,
-                  97,
                   115,
-                  117,
+                  101,
                   114,
-                  121,
+                  118,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
+          "name": "verise_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  101,
+                  114,
+                  105,
+                  115,
+                  101,
                   95,
                   118,
                   97,
@@ -4458,9 +4519,9 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "reserve_vault",
           "docs": [
-            "Protocol treasury SOL vault — source of buyback funds (shortfall path only)."
+            "Protocol reserve vault — source of buyback funds (shortfall path only)."
           ],
           "writable": true,
           "pda": {
@@ -4468,14 +4529,13 @@
               {
                 "kind": "const",
                 "value": [
-                  116,
                   114,
                   101,
-                  97,
                   115,
-                  117,
+                  101,
                   114,
-                  121,
+                  118,
+                  101,
                   95,
                   118,
                   97,
@@ -4997,6 +5057,96 @@
       ]
     },
     {
+      "name": "update_payment_config",
+      "docs": [
+        "Authority-only: update the Pyth price feed and/or active flag on a payment config."
+      ],
+      "discriminator": [
+        233,
+        162,
+        182,
+        43,
+        61,
+        208,
+        188,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "payment_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payment_config.mint",
+                "account": "PaymentConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "pyth_price_feed",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "active",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
+    },
+    {
       "name": "withdraw_excess",
       "docs": [
         "Queue an excess collateral withdrawal."
@@ -5346,8 +5496,8 @@
     },
     {
       "code": 6011,
-      "name": "RepaymentExceedsDebt",
-      "msg": "Repayment amount exceeds outstanding debt"
+      "name": "InsufficientRepaymentBalance",
+      "msg": "Insufficient riseSOL balance to cover outstanding debt"
     },
     {
       "code": 6012,

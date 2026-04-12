@@ -245,21 +245,19 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "verise_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  116,
-                  114,
+                  118,
                   101,
-                  97,
-                  115,
-                  117,
                   114,
-                  121,
+                  105,
+                  115,
+                  101,
                   95,
                   118,
                   97,
@@ -311,6 +309,61 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_governance_config",
+      "docs": [
+        "Authority-only: close governance config and reclaim rent.",
+        "Used for devnet re-initialization (e.g., RISE mint correction)."
+      ],
+      "discriminator": [
+        20,
+        131,
+        54,
+        71,
+        141,
+        77,
+        178,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": []

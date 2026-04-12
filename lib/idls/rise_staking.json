@@ -88,29 +88,6 @@
           "signer": true
         },
         {
-          "name": "pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              }
-            ]
-          }
-        },
-        {
           "name": "stake_rewards_config",
           "pda": {
             "seeds": [
@@ -176,12 +153,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "user_rise_sol_account",
-          "docs": [
-            "riseSOL ATA — read to sync reward_debt after claim."
-          ]
         },
         {
           "name": "rewards_vault",
@@ -571,21 +542,45 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "reserve_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  116,
                   114,
                   101,
-                  97,
                   115,
-                  117,
+                  101,
                   114,
-                  121,
+                  118,
+                  101,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "verise_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  101,
+                  114,
+                  105,
+                  115,
+                  101,
                   95,
                   118,
                   97,
@@ -2041,21 +2036,20 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "reserve_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  116,
                   114,
                   101,
-                  97,
                   115,
-                  117,
+                  101,
                   114,
-                  121,
+                  118,
+                  101,
                   95,
                   118,
                   97,
@@ -2163,21 +2157,20 @@
           }
         },
         {
-          "name": "treasury_vault",
+          "name": "reserve_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  116,
                   114,
                   101,
-                  97,
                   115,
-                  117,
+                  101,
                   114,
-                  121,
+                  118,
+                  101,
                   95,
                   118,
                   97,

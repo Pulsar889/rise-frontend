@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Proposal } from "@/hooks/useGovernance";
 
@@ -24,6 +25,13 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
+  const [voteSuccess, setVoteSuccess] = useState<"for" | "against" | null>(null);
+
+  async function handleVote(support: boolean) {
+    await vote(proposal.id, support);
+    setVoteSuccess(support ? "for" : "against");
+    setTimeout(() => setVoteSuccess(null), 4000);
+  }
 
   const forPct     = proposal.totalVotes > 0 ? (proposal.votesFor / proposal.totalVotes) * 100 : 0;
   const againstPct = 100 - forPct;
@@ -61,37 +69,36 @@ export function ProposalCard({ proposal, vote, loading }: ProposalCardProps) {
         {/* Vote buttons (active proposals only) */}
         {proposal.status === "active" && (
           <div className="flex flex-col gap-2">
-            {proposal.myVote && (
+            {voteSuccess && (
+              <p className="text-sm font-medium text-emerald-400 text-center">
+                Vote cast {voteSuccess === "for" ? "For" : "Against"}!
+              </p>
+            )}
+            {!voteSuccess && proposal.myVote && (
               <p className="text-xs text-[#94A3B8] text-center">
                 You voted <span className={`font-semibold ${proposal.myVote === "for" ? "text-emerald-400" : "text-red-400"}`}>
                   {proposal.myVote === "for" ? "For" : "Against"}
-                </span> — you can change your vote until the proposal ends
+                </span>
               </p>
             )}
-            <div className="flex gap-3">
-              <button
-                onClick={() => vote(proposal.id, true)}
-                disabled={loading}
-                className={`flex-1 rounded-full py-2.5 text-sm font-medium transition-colors ${
-                  proposal.myVote === "for"
-                    ? "bg-emerald-500 text-white"
-                    : "bg-emerald-950 text-emerald-400 hover:bg-emerald-900"
-                }`}
-              >
-                {proposal.myVote === "for" ? "✓ Voted For" : "Vote For"}
-              </button>
-              <button
-                onClick={() => vote(proposal.id, false)}
-                disabled={loading}
-                className={`flex-1 rounded-full py-2.5 text-sm font-medium transition-colors ${
-                  proposal.myVote === "against"
-                    ? "bg-red-500 text-white"
-                    : "bg-red-950 text-red-400 hover:bg-red-900"
-                }`}
-              >
-                {proposal.myVote === "against" ? "✓ Voted Against" : "Vote Against"}
-              </button>
-            </div>
+            {!proposal.myVote && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleVote(true)}
+                  disabled={loading}
+                  className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors bg-emerald-950 text-emerald-400 hover:bg-emerald-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Vote For
+                </button>
+                <button
+                  onClick={() => handleVote(false)}
+                  disabled={loading}
+                  className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors bg-red-950 text-red-400 hover:bg-red-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Vote Against
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

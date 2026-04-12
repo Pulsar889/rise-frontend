@@ -9,6 +9,7 @@ export function LockForm() {
   const [amount, setAmount] = useState("");
   const [Weeks, setWeeks] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const { lockRise, loadingLock: loading, riseBalance } = useGovernance();
 
   const num = parseFloat(amount) || 0;
@@ -27,10 +28,13 @@ export function LockForm() {
   async function handleLock() {
     if (num <= 0 || !WeeksValid) return;
     setError(null);
+    setSuccess(false);
     try {
       await lockRise(num, WeeksNum * 7);
       setAmount("");
       setWeeks("");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -88,6 +92,9 @@ export function LockForm() {
         <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">You have no RISE to lock.</p>
       )}
 
+      {success && (
+        <p className="text-sm font-medium text-emerald-400">RISE locked successfully!</p>
+      )}
       {error && (
         <p className="text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2 break-all">{error}</p>
       )}

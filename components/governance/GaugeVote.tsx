@@ -8,6 +8,7 @@ export function GaugeVote() {
   const hasActiveLock = locks.some((l) => l.expiresAt > new Date());
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [initialized, setInitialized] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (!initialized && gauges.length > 0) {
@@ -25,7 +26,10 @@ export function GaugeVote() {
 
   async function handleSubmit() {
     if (!valid) return;
+    setSuccess(false);
     await setGaugeWeights(weights);
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 4000);
   }
 
   return (
@@ -68,6 +72,9 @@ export function GaugeVote() {
           ))}
         </div>
 
+        {success && (
+          <p className="text-sm font-medium text-emerald-400">Gauge votes submitted!</p>
+        )}
         {!hasActiveLock && (
           <p className="text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">You need an active veRISE lock to vote on gauges.</p>
         )}

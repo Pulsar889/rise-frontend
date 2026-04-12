@@ -22,6 +22,9 @@ import {
 // reward_per_token precision scale — matches Gauge::REWARD_SCALE on-chain
 const REWARD_SCALE = 1_000_000_000_000n; // 1e12
 
+// RISE token has 6 decimals — use this for all RISE-denominated amounts
+const RISE_SCALE = 1_000_000;
+
 // Mirrors makePlaceholder() in reset_rewards.mjs — seed padded to 32 bytes
 function placeholderPool(seed: string): string {
   const buf = Buffer.alloc(32, 0);
@@ -113,7 +116,7 @@ export function useRewards() {
       const epochEmissionsRaw: number = config.epochEmissions.toNumber();
       const currentEpoch: number      = config.currentEpoch.toNumber();
       const riseMint          = config.riseMint as PublicKey;
-      setEpochEmissions(epochEmissionsRaw / LAMPORTS_PER_SOL);
+      setEpochEmissions(epochEmissionsRaw / RISE_SCALE);
 
       // ── All Gauge accounts — fetched directly by known PDA, no getProgramAccounts ──
       const gaugeCount: number = config.gaugeCount.toNumber();
@@ -146,7 +149,7 @@ export function useRewards() {
             gauge:          gaugePdaStr,
             lpAmount:       (acc as any).lpAmount.toNumber() / LAMPORTS_PER_SOL,
             rewardDebt:     BigInt((acc as any).rewardDebt.toString()),
-            pendingRewards: (acc as any).pendingRewards.toNumber() / LAMPORTS_PER_SOL,
+            pendingRewards: (acc as any).pendingRewards.toNumber() / RISE_SCALE,
           });
         });
       }
@@ -171,7 +174,7 @@ export function useRewards() {
           const rewardPerTokenBig          = BigInt(acc.rewardPerToken.toString());
           const totalLpDepositedRaw: number = acc.totalLpDeposited.toNumber();
 
-          const weeklyEmission = epochEmissionsRaw * weightBps / 10_000 / LAMPORTS_PER_SOL;
+          const weeklyEmission = epochEmissionsRaw * weightBps / 10_000 / RISE_SCALE;
 
           // Read LP mint from the pre-fetched vault account info
           let lpMint: string | null = null;
@@ -194,7 +197,7 @@ export function useRewards() {
             const totalRaw     = pendingRaw + newlyAccrued;
 
             myDeposit     = stake.lpAmount.toNumber() / LAMPORTS_PER_SOL;
-            claimableRise = Number(totalRaw) / LAMPORTS_PER_SOL;
+            claimableRise = Number(totalRaw) / RISE_SCALE;
             totalClaimableAccum += claimableRise;
           }
 
@@ -208,7 +211,7 @@ export function useRewards() {
             rewardPerToken:      rewardPerTokenBig,
             totalLpDeposited:    totalLpDepositedRaw / LAMPORTS_PER_SOL,
             lastCheckpointEpoch: acc.lastCheckpointEpoch.toNumber(),
-            totalDistributed:    acc.totalDistributed.toNumber() / LAMPORTS_PER_SOL,
+            totalDistributed:    acc.totalDistributed.toNumber() / RISE_SCALE,
             weeklyEmission,
             tvl:                 totalLpDepositedRaw / LAMPORTS_PER_SOL,
             lpMint,
@@ -233,7 +236,7 @@ export function useRewards() {
 
           if (stakeConfigInfo) {
             const stakeConfig = await (staking.account as any)["stakeRewardsConfig"].fetch(stakeConfigPda);
-            stakeEmissions = stakeConfig.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
+            stakeEmissions = stakeConfig.epochEmissions.toNumber() / RISE_SCALE;
             const rewardPerToken: bigint = BigInt(stakeConfig.rewardPerToken.toString());
 
             const userStakeRewardsPda = deriveUserStakeRewards(publicKey);
@@ -247,7 +250,7 @@ export function useRewards() {
 
               const accumulated  = riseSolAmount * rewardPerToken / REWARD_SCALE;
               const newlyAccrued = accumulated > rewardDebt ? accumulated - rewardDebt : 0n;
-              stakeClaimableAccum = Number(pendingRaw + newlyAccrued) / LAMPORTS_PER_SOL;
+              stakeClaimableAccum = Number(pendingRaw + newlyAccrued) / RISE_SCALE;
             }
           }
         } catch {
@@ -265,10 +268,10 @@ export function useRewards() {
         const borrowConfigInfo = await connection.getAccountInfo(deriveBorrowRewardsConfig());
         if (borrowConfigInfo) {
           const bc = await (cdp.account as any)["borrowRewardsConfig"].fetch(deriveBorrowRewardsConfig());
-          borrowEmissions = bc.epochEmissions.toNumber() / LAMPORTS_PER_SOL;
+          borrowEmissions = bc.epochEmissions.toNumber() / RISE_SCALE;
         }
       } catch { /* not initialized */ }
-      setTotalWeeklyEmissions(epochEmissionsRaw / LAMPORTS_PER_SOL + stakeEmissions + borrowEmissions);
+      setTotalWeeklyEmissions(epochEmissionsRaw / RISE_SCALE + stakeEmissions + borrowEmissions);
     } catch (err: any) {
       setFetchError(err?.message ?? "Failed to load rewards data");
     } finally {

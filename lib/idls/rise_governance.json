@@ -586,9 +586,6 @@
           }
         },
         {
-          "name": "lock"
-        },
-        {
           "name": "proposal",
           "writable": true,
           "pda": {

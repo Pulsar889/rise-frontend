@@ -722,8 +722,7 @@ export function useGovernance() {
    */
   const createProposal = useCallback(async (description: string, targetProgram: string) => {
     if (!wallet || !publicKey) throw new Error("Wallet not connected");
-    const activeLock = locks.find((l) => l.expiresAt > new Date()) ?? locks[0];
-    if (!activeLock) throw new Error("You must lock RISE before creating a proposal");
+    if (locks.length === 0) throw new Error("You must lock RISE before creating a proposal");
 
     setLoadingProposal(true);
     try {
@@ -746,10 +745,12 @@ export function useGovernance() {
           .accounts({
             proposer:      publicKey,
             config:        configPda,
-            lock:          deriveVeLock(publicKey, activeLock.nonce),
             proposal:      proposalPda,
             systemProgram: SystemProgram.programId,
           })
+          .remainingAccounts(
+            locks.map((l) => ({ pubkey: new PublicKey(l.id), isSigner: false, isWritable: false }))
+          )
           .rpc();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

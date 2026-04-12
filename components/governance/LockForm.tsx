@@ -1,16 +1,20 @@
 "use client";
 import { useState } from "react";
 import { TokenInput } from "@/components/ui/TokenInput";
-import { useGovernance } from "@/hooks/useGovernance";
 
 const MAX_WEEKS = 208; // 4 years
 
-export function LockForm() {
+interface LockFormProps {
+  lockRise: (amount: number, durationDays: number) => Promise<void>;
+  loading: boolean;
+  riseBalance: number;
+}
+
+export function LockForm({ lockRise, loading, riseBalance }: LockFormProps) {
   const [amount, setAmount] = useState("");
   const [Weeks, setWeeks] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { lockRise, loadingLock: loading, riseBalance } = useGovernance();
 
   const num = parseFloat(amount) || 0;
   const WeeksNum = parseInt(Weeks) || 0;

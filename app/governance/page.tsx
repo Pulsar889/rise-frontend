@@ -12,8 +12,13 @@ import { useWallet } from "@solana/wallet-adapter-react";
 export default function GovernancePage() {
   const { publicKey } = useWallet();
   const connected = !!publicKey;
-  const { veRiseBalance, totalLockedRise, locks, claimableRevenue, proposals, vote, claimRevenue, unlockRise, loadingUnlock, loadingVote, loadingClaim } =
-    useGovernance();
+  const {
+    veRiseBalance, totalLockedRise, locks, claimableRevenue, proposals,
+    vote, claimRevenue, unlockRise, loadingUnlock, loadingVote, loadingClaim,
+    lockRise, loadingLock, riseBalance,
+    gauges, setGaugeWeights, loadingGauge,
+    createProposal, loadingProposal, userVerise,
+  } = useGovernance();
 
   const activeProposals = proposals.filter((p) => p.status === "active");
   const pastProposals   = proposals.filter((p) => p.status !== "active");
@@ -54,7 +59,7 @@ export default function GovernancePage() {
         <div className="flex flex-col gap-6">
           <Card padding="lg">
             <h2 className="font-semibold text-[#F1F5F9] mb-5">Lock RISE</h2>
-            <LockForm />
+            <LockForm lockRise={lockRise} loading={loadingLock} riseBalance={riseBalance} />
           </Card>
 
           {locks.length > 0 && (
@@ -66,14 +71,14 @@ export default function GovernancePage() {
             </div>
           )}
 
-          <GaugeVote />
+          <GaugeVote gauges={gauges} locks={locks} setGaugeWeights={setGaugeWeights} loading={loadingGauge} />
         </div>
 
         {/* Right column: Proposals */}
         <div className="md:col-span-2 flex flex-col gap-6">
           <Card padding="lg">
             <h2 className="font-semibold text-[#F1F5F9] mb-5">Create Proposal</h2>
-            <CreateProposalForm />
+            <CreateProposalForm createProposal={createProposal} loadingProposal={loadingProposal} locks={locks} userVerise={userVerise} />
           </Card>
 
           {activeProposals.length > 0 && (

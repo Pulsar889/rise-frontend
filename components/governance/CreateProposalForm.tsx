@@ -1,10 +1,16 @@
 "use client";
 import { useState } from "react";
 import { SystemProgram } from "@solana/web3.js";
-import { useGovernance } from "@/hooks/useGovernance";
+import type { VeNft } from "@/hooks/useGovernance";
 
-export function CreateProposalForm() {
-  const { createProposal, loadingProposal, locks, userVerise } = useGovernance();
+interface CreateProposalFormProps {
+  createProposal: (description: string, targetProgram: string) => Promise<void>;
+  loadingProposal: boolean;
+  locks: VeNft[];
+  userVerise: number;
+}
+
+export function CreateProposalForm({ createProposal, loadingProposal, locks, userVerise }: CreateProposalFormProps) {
 
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);

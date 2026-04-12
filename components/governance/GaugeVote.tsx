@@ -1,10 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
-import { useGovernance } from "@/hooks/useGovernance";
+import type { Gauge, VeNft } from "@/hooks/useGovernance";
 
-export function GaugeVote() {
-  const { gauges, locks, setGaugeWeights, loadingGauge: loading } = useGovernance();
+interface GaugeVoteProps {
+  gauges: Gauge[];
+  locks: VeNft[];
+  setGaugeWeights: (weights: Record<string, number>) => Promise<void>;
+  loading: boolean;
+}
+
+export function GaugeVote({ gauges, locks, setGaugeWeights, loading }: GaugeVoteProps) {
   const hasActiveLock = locks.some((l) => l.expiresAt > new Date());
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [initialized, setInitialized] = useState(false);

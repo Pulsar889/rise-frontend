@@ -345,15 +345,18 @@ export function useGovernance() {
         Array.from({ length: proposalCount }, (_, i) => deriveProposal(i)).map(async (pda) => {
           try {
             const data = await (gov.account as any)["proposal"].fetch(pda);
-            return { pda, data };
+            return { pda, data, closed: false };
           } catch {
-            return null;
+            return { pda, data: null, closed: true };
           }
         })
       );
 
+      // PDAs confirmed closed on-chain — must be explicitly evicted from state
+      const closedIds = new Set(rawProposals.filter((p) => p.closed).map((p) => p.pda.toBase58()));
+
       const mappedProposals: Proposal[] = rawProposals
-        .filter((p): p is { pda: PublicKey; data: any } => p !== null)
+        .filter((p): p is { pda: PublicKey; data: any; closed: false } => !p.closed)
         .map(({ pda, data }) => {
           // Decode [u8; 128] description, strip trailing null bytes
           const description = Buffer.from(data.description as number[])
@@ -407,7 +410,7 @@ export function useGovernance() {
       //    refresh (proposalCount in GovernanceConfig may not have updated yet)
       setProposals((prev) => {
         const refreshedIds = new Set(mappedProposals.map((mp) => mp.id));
-        const optimisticOnly = prev.filter((p) => !refreshedIds.has(p.id));
+        const optimisticOnly = prev.filter((p) => !refreshedIds.has(p.id) && !closedIds.has(p.id));
         const merged = mappedProposals.map((mp) => {
           const existing = prev.find((p) => p.id === mp.id);
           return existing?.myVote && !mp.myVote ? { ...mp, myVote: existing.myVote } : mp;

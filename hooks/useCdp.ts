@@ -740,6 +740,8 @@ export function useCdp() {
           collateralMint,
           borrowerCollateralAccount,
           collateralVault:          deriveCollateralVault(collateralMint),
+          cdpConfig:                deriveCdpConfig(),
+          globalPool:               deriveGlobalPool(),
           solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
           priceUpdate:              priceUpdateKeypair.publicKey,
           solPriceUpdate:           solPriceUpdateKeypair.publicKey,

@@ -488,7 +488,7 @@ export function useCdp() {
         const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
         await cdp.methods
-          .repayDebtRiseSol(new BN(amount), Buffer.alloc(0), new BN(0), 0)
+          .repayDebtRiseSol(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0)
           .accounts({
             borrower:                        publicKey,
             position:                        positionPda,
@@ -527,7 +527,7 @@ export function useCdp() {
         const paymentConfig = derivePaymentConfig(paymentMint);
 
         await cdp.methods
-          .repayDebt(new BN(amount), Buffer.alloc(0), new BN(0), 0, Buffer.alloc(0), new BN(0), 0)
+          .repayDebt(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0, Buffer.alloc(0), new BN(0), 0)
           .accounts({
             borrower:                        publicKey,
             position:                        positionPda,
@@ -564,16 +564,17 @@ export function useCdp() {
 
       } else {
         // SPL token path — swap payment token → SOL via Jupiter
-        const paymentMint   = new PublicKey(
-          MOCK_COLLATERALS.find((c) => c.symbol === currency)?.mint ?? ""
-        );
-        const paymentConfig = derivePaymentConfig(paymentMint);
+        const paymentInfo    = MOCK_COLLATERALS.find((c) => c.symbol === currency);
+        const paymentDecimals = paymentInfo?.decimals ?? 6;
+        const paymentMint    = new PublicKey(paymentInfo?.mint ?? "");
+        const paymentConfig  = derivePaymentConfig(paymentMint);
         const borrowerPaymentAccount = await getAssociatedTokenAddress(paymentMint, publicKey);
+        const amountNative   = Math.round(amount * Math.pow(10, paymentDecimals));
 
         const route = await getJupiterRoute(
           paymentMint.toBase58(),
           WSOL_MINT,
-          amount,
+          amountNative,
           50, // 0.5% slippage
         );
 
@@ -583,7 +584,7 @@ export function useCdp() {
         const jupiterDestToken    = route?.jupiterDestinationToken ?? cdpWsolVault;
 
         await cdp.methods
-          .repayDebt(new BN(amount), routePlanData, new BN(quotedOutAmount), 50, Buffer.alloc(0), new BN(0), 0)
+          .repayDebt(new BN(amountNative), routePlanData, new BN(quotedOutAmount), 50, Buffer.alloc(0), new BN(0), 0)
           .accounts({
             borrower:                        publicKey,
             position:                        positionPda,
@@ -643,19 +644,23 @@ export function useCdp() {
       const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
       await cdp.methods
-        .borrowMore(new BN(additionalRiseSol))
+        .borrowMore(new BN(Math.round(additionalRiseSol * LAMPORTS_PER_SOL)))
         .accounts({
           borrower: publicKey,
           position:               positionPda,
           collateralConfig:       deriveCollateralConfig(collateralMint),
           globalPool,
           cdpConfig:              deriveCdpConfig(),
+          solPaymentConfig:       derivePaymentConfig(SystemProgram.programId),
           priceUpdate:            priceUpdateKeypair.publicKey,
           solPriceUpdate:         solPriceUpdateKeypair.publicKey,
+          collateralMint,
           riseSolMint,
           borrowerRiseSolAccount,
           stakingProgram:         getProgramPublicKeys().staking,
           tokenProgram:           TOKEN_PROGRAM_ID,
+          borrowRewardsConfig:    deriveBorrowRewardsConfig(),
+          borrowRewards:          deriveBorrowRewards(positionPda),
         })
         .preInstructions([priceUpdateIx, solPriceUpdateIx])
         .signers([priceUpdateKeypair, solPriceUpdateKeypair])

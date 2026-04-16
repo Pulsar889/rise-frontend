@@ -7,7 +7,7 @@ import { useCdp } from "@/hooks/useCdp";
 
 export default function BorrowPage() {
   const [showOpen, setShowOpen] = useState(false);
-  const { positions, collaterals } = useCdp();
+  const { positions, collaterals, pricesLoaded } = useCdp();
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
@@ -92,7 +92,7 @@ export default function BorrowPage() {
                   </div>
                   <div>
                     <p className="text-xs text-[#94A3B8]">Price</p>
-                    <p className="text-sm font-semibold text-[#F1F5F9]">${c.priceUsd}</p>
+                    <p className="text-sm font-semibold text-[#F1F5F9]">{pricesLoaded ? `$${c.priceUsd.toLocaleString()}` : "—"}</p>
                   </div>
                 </div>
               </div>

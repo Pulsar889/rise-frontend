@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { HealthBar } from "@/components/ui/HealthBar";
 import { TokenInput } from "@/components/ui/TokenInput";
-import { CdpPosition, useCdp } from "@/hooks/useCdp";
+import { CdpPosition, HealthStatus, useCdp } from "@/hooks/useCdp";
+import { useStaking } from "@/hooks/useStaking";
 import { RepayForm } from "./RepayForm";
 
 interface PositionCardProps {
@@ -14,9 +15,31 @@ export function PositionCard({ position }: PositionCardProps) {
   const [showRepay, setShowRepay] = useState(false);
   const [showBorrow, setShowBorrow] = useState(false);
   const [borrowAmount, setBorrowAmount] = useState("");
-  const { borrowMore, loading } = useCdp();
+  const { borrowMore, loading, collaterals, pricesLoaded } = useCdp();
+  const { data: staking } = useStaking();
 
-  const statusStyles: Record<string, string> = {
+  // Recompute collateral value, debt value, and health factor from live Pyth prices
+  // instead of the stale values stored on-chain when the position was last touched.
+  const collateralConfig = collaterals.find((c) => c.mint === position.collateralMint);
+  const solConfig        = collaterals.find((c) => c.symbol === "SOL");
+
+  const liveCollateralValueUsd: number = pricesLoaded && collateralConfig
+    ? position.collateralAmount * collateralConfig.priceUsd
+    : position.collateralValueUsd;
+
+  const liveDebtValueUsd: number = pricesLoaded && solConfig && staking.exchangeRate > 0
+    ? position.debtRiseSol * staking.exchangeRate * solConfig.priceUsd
+    : position.debtValueUsd;
+
+  const liveHealthFactor: number = liveDebtValueUsd > 0
+    ? (liveCollateralValueUsd * (position.liquidationThreshold / 100)) / liveDebtValueUsd
+    : position.healthFactor;
+
+  const liveStatus: HealthStatus =
+    liveHealthFactor >= 1.5 ? "healthy" :
+    liveHealthFactor >= 1.2 ? "warning"  : "danger";
+
+  const statusStyles: Record<HealthStatus, string> = {
     healthy: "bg-emerald-950 text-emerald-400",
     warning: "bg-amber-950 text-amber-400",
     danger:  "bg-red-950 text-red-400",
@@ -43,8 +66,8 @@ export function PositionCard({ position }: PositionCardProps) {
             <p className="text-xs text-[#94A3B8]">Nonce #{position.nonce}</p>
           </div>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[position.status]}`}>
-          {position.status}
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[liveStatus]}`}>
+          {liveStatus}
         </span>
       </div>
 
@@ -55,18 +78,18 @@ export function PositionCard({ position }: PositionCardProps) {
           <p className="text-xl font-semibold tabular-nums text-[#F1F5F9]">
             {position.collateralAmount} {position.collateralToken}
           </p>
-          <p className="text-sm text-[#94A3B8]">${position.collateralValueUsd.toLocaleString()}</p>
+          <p className="text-sm text-[#94A3B8]">${liveCollateralValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
         </div>
         <div>
           <p className="text-xs text-[#94A3B8] uppercase tracking-wider mb-1">Debt</p>
           <p className="text-xl font-semibold tabular-nums text-[#F1F5F9]">
             {position.debtRiseSol} riseSOL
           </p>
-          <p className="text-sm text-[#94A3B8]">${position.debtValueUsd.toLocaleString()}</p>
+          <p className="text-sm text-[#94A3B8]">${liveDebtValueUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
         </div>
       </div>
 
-      <HealthBar value={position.healthFactor} />
+      <HealthBar value={liveHealthFactor} />
 
       <div className="flex justify-between text-xs text-[#94A3B8]">
         <span>Max LTV: {position.maxLtv}%</span>

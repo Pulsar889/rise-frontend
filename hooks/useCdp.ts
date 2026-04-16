@@ -622,7 +622,7 @@ export function useCdp() {
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey]);
+  }, [wallet, publicKey, connection]);
 
   /** Borrows additional riseSOL against an existing open position. */
   const borrowMore = useCallback(async (
@@ -804,7 +804,7 @@ export function useCdp() {
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey]);
+  }, [wallet, publicKey, connection]);
 
   return {
     positions,

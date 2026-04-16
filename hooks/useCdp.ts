@@ -688,8 +688,34 @@ export function useCdp() {
 
       const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
       const collateralDecimals = collateralInfo?.decimals ?? 9;
+      const collateralLamports = Math.round(amount * Math.pow(10, collateralDecimals));
+
+      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
+      const postInstructions: import("@solana/web3.js").TransactionInstruction[] = [];
+      const isWsol = collateralMint.toBase58() === WSOL_MINT;
+      if (isWsol) {
+        const {
+          createAssociatedTokenAccountInstruction,
+          createSyncNativeInstruction,
+          createCloseAccountInstruction,
+        } = await import("@solana/spl-token");
+        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
+        if (!wsolAtaInfo) {
+          preInstructions.push(
+            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
+          );
+        }
+        preInstructions.push(
+          SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }),
+          createSyncNativeInstruction(borrowerCollateralAccount),
+        );
+        postInstructions.push(
+          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
+        );
+      }
+
       await cdp.methods
-        .addCollateral(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
+        .addCollateral(new BN(collateralLamports))
         .accounts({
           borrower: publicKey,
           position:                 positionPda,
@@ -702,17 +728,20 @@ export function useCdp() {
           solPriceUpdate:           solPriceUpdateKeypair.publicKey,
           tokenProgram:             TOKEN_PROGRAM_ID,
         })
-        .preInstructions([priceUpdateIx, solPriceUpdateIx])
+        .preInstructions(preInstructions)
+        .postInstructions(postInstructions)
         .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey]);
+  }, [wallet, publicKey, connection]);
 
   /**
    * Withdraws excess collateral immediately (no delay).
    * Safe LTV buffer (80% of max LTV) is enforced on-chain.
+   * For wSOL positions, creates the ATA if needed and closes it after
+   * withdrawal so the user receives native SOL, not wrapped SOL.
    */
   const withdrawExcess = useCallback(async (
     position: CdpPosition,
@@ -731,6 +760,27 @@ export function useCdp() {
 
       const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
       const collateralDecimals = collateralInfo?.decimals ?? 9;
+
+      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
+      const postInstructions: import("@solana/web3.js").TransactionInstruction[] = [];
+      const isWsol = collateralMint.toBase58() === WSOL_MINT;
+      if (isWsol) {
+        const {
+          createAssociatedTokenAccountInstruction,
+          createCloseAccountInstruction,
+        } = await import("@solana/spl-token");
+        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
+        if (!wsolAtaInfo) {
+          preInstructions.push(
+            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
+          );
+        }
+        // Close ATA after withdrawal to unwrap wSOL → native SOL
+        postInstructions.push(
+          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
+        );
+      }
+
       await cdp.methods
         .withdrawExcess(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
         .accounts({
@@ -747,7 +797,8 @@ export function useCdp() {
           solPriceUpdate:           solPriceUpdateKeypair.publicKey,
           tokenProgram:             TOKEN_PROGRAM_ID,
         })
-        .preInstructions([priceUpdateIx, solPriceUpdateIx])
+        .preInstructions(preInstructions)
+        .postInstructions(postInstructions)
         .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
     } finally {

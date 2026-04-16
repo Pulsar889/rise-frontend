@@ -7,6 +7,7 @@ import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 import { getProvider, getCdpProgram, getStakingProgram, getProgramPublicKeys } from "@/lib/programs";
 import { PYTH_FEED_IDS, PYTH_HERMES_URL, JUPITER_PROGRAM_ID, JUPITER_PROGRAM_AUTHORITY, WSOL_MINT } from "@/lib/constants";
+import { buildCdpPriceUpdateIxs } from "@/lib/pythPull";
 import {
   deriveGlobalPool,
   derivePoolVault,
@@ -267,16 +268,23 @@ export function useCdp() {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
-  /** Fetches price feed pubkeys from the on-chain collateral config and SOL payment config. */
-  async function getPriceFeeds(cdp: ReturnType<typeof getCdpProgram>, collateralMint: PublicKey) {
+  /**
+   * Fetches the Pyth feed IDs from on-chain configs, posts fresh PriceUpdateV2
+   * accounts via postUpdateAtomic, and returns keypairs + pre-instructions.
+   *
+   * The pre-instructions must be included BEFORE the CDP instruction in the
+   * same transaction. The keypair publicKeys are passed as `priceUpdate` /
+   * `solPriceUpdate` accounts in CDP instructions.
+   */
+  async function buildPriceIxs(cdp: ReturnType<typeof getCdpProgram>, collateralMint: PublicKey) {
     const [collateralConfigData, solPaymentConfigData] = await Promise.all([
       (cdp.account as any)["collateralConfig"].fetch(deriveCollateralConfig(collateralMint)),
       (cdp.account as any)["paymentConfig"].fetch(derivePaymentConfig(SystemProgram.programId)),
     ]);
-    return {
-      pythPriceFeed: collateralConfigData.pythPriceFeed as PublicKey,
-      solPriceFeed:  solPaymentConfigData.pythPriceFeed as PublicKey,
-    };
+    // pyth_price_feed is stored as a Pubkey whose bytes are the 32-byte feed ID hex.
+    const collateralFeedHex = (collateralConfigData.pythPriceFeed as PublicKey).toBuffer().toString("hex");
+    const solFeedHex        = (solPaymentConfigData.pythPriceFeed  as PublicKey).toBuffer().toString("hex");
+    return buildCdpPriceUpdateIxs(connection, publicKey!, collateralFeedHex, solFeedHex);
   }
 
   /** Returns the riseSOL mint from GlobalPool. */
@@ -314,7 +322,8 @@ export function useCdp() {
       const collateralVault = deriveCollateralVault(collateralMint);
       const position        = deriveCdpPosition(publicKey, nonce);
       const riseSolMint     = await getRiseSolMint(staking);
-      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
+        await buildPriceIxs(cdp, collateralMint);
 
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
       const borrowerRiseSolAccount    = await getAssociatedTokenAddress(riseSolMint, publicKey);
@@ -322,7 +331,7 @@ export function useCdp() {
       const borrowRewards             = deriveBorrowRewards(position);
 
       // If collateral is SOL, wrap it to WSOL before depositing
-      const preInstructions = [];
+      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
       const postInstructions = [];
       const isWsol = collateralMint.toBase58() === WSOL_MINT;
       if (isWsol) {
@@ -360,8 +369,8 @@ export function useCdp() {
           borrowerCollateralAccount,
           collateralVault,
           solPaymentConfig:          derivePaymentConfig(SystemProgram.programId),
-          pythPriceFeed,
-          solPriceFeed,
+          priceUpdate:               priceUpdateKeypair.publicKey,
+          solPriceUpdate:            solPriceUpdateKeypair.publicKey,
           riseSolMint,
           borrowerRiseSolAccount,
           borrowRewardsConfig,
@@ -372,6 +381,7 @@ export function useCdp() {
         })
         .preInstructions(preInstructions)
         .postInstructions(postInstructions)
+        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
 
       setNextPositionNonce((n) => n + 1);
@@ -460,7 +470,8 @@ export function useCdp() {
       const collateralVault   = deriveCollateralVault(collateralMint);
       const cdpConfig         = deriveCdpConfig();
       const globalPool        = deriveGlobalPool();
-      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
+        await buildPriceIxs(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       // Shared Jupiter accounts needed by both repay paths
@@ -495,8 +506,8 @@ export function useCdp() {
             wsolMint,
             cdpWsolBuybackVault,
             solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            pythPriceFeed,
-            solPriceFeed,
+            priceUpdate:                     priceUpdateKeypair.publicKey,
+            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
             jupiterProgram,
             jupiterProgramAuthority,
             jupiterEventAuthority,
@@ -506,6 +517,8 @@ export function useCdp() {
             tokenProgram:                    TOKEN_PROGRAM_ID,
             systemProgram:                   SystemProgram.programId,
           })
+          .preInstructions([priceUpdateIx, solPriceUpdateIx])
+          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
           .rpc();
 
       } else if (currency === "SOL") {
@@ -528,8 +541,8 @@ export function useCdp() {
             borrowerCollateralAccount,
             collateralMint,
             solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            pythPriceFeed,
-            solPriceFeed,
+            priceUpdate:                     priceUpdateKeypair.publicKey,
+            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
             paymentMint:                     PublicKey.default,
             borrowerPaymentAccount:          PublicKey.default,
             wsolMint,
@@ -545,6 +558,8 @@ export function useCdp() {
             tokenProgram:                    TOKEN_PROGRAM_ID,
             systemProgram:                   SystemProgram.programId,
           })
+          .preInstructions([priceUpdateIx, solPriceUpdateIx])
+          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
           .rpc();
 
       } else {
@@ -582,8 +597,8 @@ export function useCdp() {
             borrowerCollateralAccount,
             collateralMint,
             solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            pythPriceFeed,
-            solPriceFeed,
+            priceUpdate:                     priceUpdateKeypair.publicKey,
+            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
             paymentMint,
             borrowerPaymentAccount,
             wsolMint,
@@ -599,6 +614,8 @@ export function useCdp() {
             tokenProgram:                    TOKEN_PROGRAM_ID,
             systemProgram:                   SystemProgram.programId,
           })
+          .preInstructions([priceUpdateIx, solPriceUpdateIx])
+          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
           .rpc();
       }
     } finally {
@@ -621,7 +638,8 @@ export function useCdp() {
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
       const globalPool     = deriveGlobalPool();
       const riseSolMint    = await getRiseSolMint(staking);
-      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
+        await buildPriceIxs(cdp, collateralMint);
       const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
       await cdp.methods
@@ -632,14 +650,15 @@ export function useCdp() {
           collateralConfig:       deriveCollateralConfig(collateralMint),
           globalPool,
           cdpConfig:              deriveCdpConfig(),
-          solPaymentConfig:       derivePaymentConfig(SystemProgram.programId),
-          pythPriceFeed,
-          solPriceFeed,
+          priceUpdate:            priceUpdateKeypair.publicKey,
+          solPriceUpdate:         solPriceUpdateKeypair.publicKey,
           riseSolMint,
           borrowerRiseSolAccount,
           stakingProgram:         getProgramPublicKeys().staking,
           tokenProgram:           TOKEN_PROGRAM_ID,
         })
+        .preInstructions([priceUpdateIx, solPriceUpdateIx])
+        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
     } finally {
       setLoading(false);
@@ -658,7 +677,8 @@ export function useCdp() {
       const cdp            = getCdpProgram(provider);
       const collateralMint = new PublicKey(position.collateralMint);
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
-      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
+        await buildPriceIxs(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       await cdp.methods
@@ -671,10 +691,12 @@ export function useCdp() {
           borrowerCollateralAccount,
           collateralVault:          deriveCollateralVault(collateralMint),
           solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
-          pythPriceFeed,
-          solPriceFeed,
+          priceUpdate:              priceUpdateKeypair.publicKey,
+          solPriceUpdate:           solPriceUpdateKeypair.publicKey,
           tokenProgram:             TOKEN_PROGRAM_ID,
         })
+        .preInstructions([priceUpdateIx, solPriceUpdateIx])
+        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
     } finally {
       setLoading(false);
@@ -696,7 +718,8 @@ export function useCdp() {
       const cdp            = getCdpProgram(provider);
       const collateralMint = new PublicKey(position.collateralMint);
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
-      const { pythPriceFeed, solPriceFeed } = await getPriceFeeds(cdp, collateralMint);
+      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
+        await buildPriceIxs(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       await cdp.methods
@@ -709,10 +732,12 @@ export function useCdp() {
           borrowerCollateralAccount,
           collateralVault:          deriveCollateralVault(collateralMint),
           solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
-          pythPriceFeed,
-          solPriceFeed,
+          priceUpdate:              priceUpdateKeypair.publicKey,
+          solPriceUpdate:           solPriceUpdateKeypair.publicKey,
           tokenProgram:             TOKEN_PROGRAM_ID,
         })
+        .preInstructions([priceUpdateIx, solPriceUpdateIx])
+        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
         .rpc();
     } finally {
       setLoading(false);

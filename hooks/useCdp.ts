@@ -686,8 +686,10 @@ export function useCdp() {
         await buildPriceIxs(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
+      const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
+      const collateralDecimals = collateralInfo?.decimals ?? 9;
       await cdp.methods
-        .addCollateral(new BN(amount))
+        .addCollateral(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
         .accounts({
           borrower: publicKey,
           position:                 positionPda,
@@ -727,8 +729,10 @@ export function useCdp() {
         await buildPriceIxs(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
+      const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
+      const collateralDecimals = collateralInfo?.decimals ?? 9;
       await cdp.methods
-        .withdrawExcess(new BN(amount))
+        .withdrawExcess(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
         .accounts({
           borrower: publicKey,
           position:                 positionPda,

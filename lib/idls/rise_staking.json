@@ -597,6 +597,13 @@
           "writable": true
         },
         {
+          "name": "governance_config",
+          "docs": [
+            "Owner validated against the hardcoded governance program ID.",
+            "Read-only — provides total_verise for the per-share revenue accumulator."
+          ]
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -1305,6 +1312,13 @@
               }
             ]
           }
+        },
+        {
+          "name": "governance_config",
+          "docs": [
+            "Owner validated against the hardcoded governance program ID.",
+            "Read-only — provides total_verise for the per-share revenue accumulator."
+          ]
         }
       ],
       "args": [
@@ -2326,6 +2340,11 @@
       "code": 6011,
       "name": "NoRewardsToClaim",
       "msg": "No staking rewards to claim"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidGovernanceConfig",
+      "msg": "Invalid governance config account"
     }
   ],
   "types": [

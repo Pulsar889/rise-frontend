@@ -324,8 +324,12 @@ export function useRewards() {
       const stakePda      = deriveUserStake(publicKey, gaugePda);
       const vaultPda      = deriveGaugeLpVault(pool);
 
+      const lpMintInfo = await connection.getParsedAccountInfo(lpMint);
+      const lpDecimals: number = (lpMintInfo.value?.data as any)?.parsed?.info?.decimals ?? 9;
+      const amountNative = Math.round(amount * Math.pow(10, lpDecimals));
+
       await rewards.methods
-        .depositLp(new BN(amount * LAMPORTS_PER_SOL))
+        .depositLp(new BN(amountNative))
         .accounts({
           user:          publicKey,
           gauge:         gaugePda,
@@ -364,8 +368,12 @@ export function useRewards() {
       const userLpAccount = await getAssociatedTokenAddress(lpMint, publicKey);
       const stakePda      = deriveUserStake(publicKey, gaugePda);
 
+      const lpMintInfo = await connection.getParsedAccountInfo(lpMint);
+      const lpDecimals: number = (lpMintInfo.value?.data as any)?.parsed?.info?.decimals ?? 9;
+      const amountNative = Math.round(amount * Math.pow(10, lpDecimals));
+
       await rewards.methods
-        .withdrawLp(new BN(amount * LAMPORTS_PER_SOL))
+        .withdrawLp(new BN(amountNative))
         .accounts({
           user:          publicKey,
           gauge:         gaugePda,

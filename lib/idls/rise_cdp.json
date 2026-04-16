@@ -1688,6 +1688,12 @@
           }
         },
         {
+          "name": "governance_config",
+          "docs": [
+            "Owner validated by the staking program inside that instruction."
+          ]
+        },
+        {
           "name": "staking_program",
           "address": "BnQc6jJMT6mt3mvWuQFAd9vf2T2wWkAYD2uGjCXud6Lo"
         },
@@ -4950,9 +4956,34 @@
         {
           "name": "authority",
           "docs": [
-            "Protocol authority — only this account can update collateral configs."
+            "Protocol authority — must match cdp_config.authority."
           ],
           "signer": true
+        },
+        {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — provides the stored authority pubkey for validation."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "collateral_config",

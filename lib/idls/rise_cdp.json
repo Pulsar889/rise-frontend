@@ -5330,6 +5330,94 @@
           }
         },
         {
+          "name": "cdp_config",
+          "docs": [
+            "Global CDP config — needed for debt ceiling / utilization in interest accrual."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  100,
+                  112,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "GlobalPool from the staking program — read for staking supply in interest accrual."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                160,
+                54,
+                178,
+                51,
+                184,
+                39,
+                1,
+                67,
+                210,
+                110,
+                244,
+                61,
+                52,
+                110,
+                54,
+                249,
+                70,
+                78,
+                207,
+                79,
+                126,
+                235,
+                172,
+                97,
+                199,
+                245,
+                50,
+                11,
+                159,
+                191,
+                12,
+                144
+              ]
+            }
+          }
+        },
+        {
           "name": "sol_payment_config",
           "docs": [
             "SOL payment config — provides the registered SOL/USD price feed pubkey for validation."

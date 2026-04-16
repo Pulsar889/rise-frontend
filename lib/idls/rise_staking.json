@@ -2345,6 +2345,11 @@
       "code": 6012,
       "name": "InvalidGovernanceConfig",
       "msg": "Invalid governance config account"
+    },
+    {
+      "code": 6013,
+      "name": "EpochNotAdvanced",
+      "msg": "Fee collection already performed this epoch"
     }
   ],
   "types": [

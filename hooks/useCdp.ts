@@ -85,21 +85,36 @@ export function useCdp() {
   // Derived from on-chain data after refresh; incremented locally on openPosition.
   const [nextPositionNonce, setNextPositionNonce] = useState(0);
 
-  // Fetch live USD prices from Pyth Hermes once on mount; mock prices are the fallback.
+  // Fetch live USD prices from Pyth Hermes once on mount.
+  // Hermes reliably handles single-ID requests; fetch each price individually in parallel.
   useEffect(() => {
-    const feedIds = [...new Set(
-      MOCK_COLLATERALS.map((c) => PYTH_FEED_IDS[c.symbol]).filter(Boolean)
-    )];
-    if (feedIds.length === 0) return;
+    const entries = MOCK_COLLATERALS
+      .map((c) => ({ symbol: c.symbol, feedId: PYTH_FEED_IDS[c.symbol] }))
+      .filter((e) => Boolean(e.feedId));
 
-    const query = feedIds.map((id) => `ids[]=${id}`).join("&");
-    fetch(`${PYTH_HERMES_URL}/v2/updates/price/latest?${query}&parsed=true`)
-      .then((res) => res.json())
-      .then((data: { parsed: Array<{ id: string; price: { price: string; expo: number } }> }) => {
-        const priceMap: Record<string, number> = {};
-        for (const entry of data.parsed) {
-          priceMap[entry.id] = parseInt(entry.price.price, 10) * Math.pow(10, entry.price.expo);
+    if (entries.length === 0) { setPricesLoaded(true); return; }
+
+    Promise.allSettled(
+      entries.map(({ feedId }) =>
+        fetch(`${PYTH_HERMES_URL}/v2/updates/price/latest?ids[]=${feedId}&parsed=true`)
+          .then((res) => res.json())
+          .then((data: { parsed: Array<{ id: string; price: { price: string; expo: number } }> }) => {
+            const entry = data.parsed?.[0];
+            if (!entry) return null;
+            return {
+              id: entry.id,
+              price: parseInt(entry.price.price, 10) * Math.pow(10, entry.price.expo),
+            };
+          })
+      )
+    ).then((results) => {
+      const priceMap: Record<string, number> = {};
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value && result.value.price > 0) {
+          priceMap[result.value.id] = result.value.price;
         }
+      }
+      if (Object.keys(priceMap).length > 0) {
         setCollaterals((prev) =>
           prev.map((c) => {
             const feedId = PYTH_FEED_IDS[c.symbol];
@@ -107,9 +122,8 @@ export function useCdp() {
             return livePrice && livePrice > 0 ? { ...c, priceUsd: livePrice } : c;
           })
         );
-      })
-      .catch(() => {/* keep mock prices on network failure */})
-      .finally(() => setPricesLoaded(true));
+      }
+    }).finally(() => setPricesLoaded(true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wallet = useAnchorWallet();

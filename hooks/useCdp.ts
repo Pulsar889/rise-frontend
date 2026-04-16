@@ -389,7 +389,7 @@ export function useCdp() {
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, nextPositionNonce, refresh]);
+  }, [wallet, publicKey, nextPositionNonce, refresh, connection]);
 
   /**
    * Calls Jupiter v6 quote → swap-instructions to get the pre-serialized
@@ -668,7 +668,7 @@ export function useCdp() {
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey]);
+  }, [wallet, publicKey, connection]);
 
   /** Deposits additional collateral into an existing open position. */
   const addCollateral = useCallback(async (

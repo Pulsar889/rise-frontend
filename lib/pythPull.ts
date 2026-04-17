@@ -149,7 +149,7 @@ export async function buildPriceUpdateIx(
       { pubkey: payer,                        isSigner: true,  isWritable: true  },
       { pubkey: guardianSet,                  isSigner: false, isWritable: false },
       { pubkey: TREASURY_CONFIG_PDA,          isSigner: false, isWritable: false },
-      { pubkey: treasury,                     isSigner: true,  isWritable: true  },
+      { pubkey: treasury,                     isSigner: false, isWritable: true  },
       { pubkey: priceUpdateKeypair.publicKey, isSigner: true,  isWritable: true  },
       { pubkey: SystemProgram.programId,      isSigner: false, isWritable: false },
       { pubkey: payer,                        isSigner: true,  isWritable: true  }, // write_authority

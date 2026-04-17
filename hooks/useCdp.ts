@@ -7,7 +7,8 @@ import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 import { getProvider, getCdpProgram, getStakingProgram, getProgramPublicKeys } from "@/lib/programs";
 import { PYTH_FEED_IDS, PYTH_HERMES_URL, JUPITER_PROGRAM_ID, JUPITER_PROGRAM_AUTHORITY, WSOL_MINT } from "@/lib/constants";
-import { buildCdpPriceUpdateIxs } from "@/lib/pythPull";
+import { sendWithPriceUpdates } from "@/lib/pythPull";
+import { InstructionWithEphemeralSigners } from "@pythnetwork/pyth-solana-receiver";
 import {
   deriveGlobalPool,
   derivePoolVault,
@@ -282,23 +283,20 @@ export function useCdp() {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
-  /**
-   * Fetches the Pyth feed IDs from on-chain configs, posts fresh PriceUpdateV2
-   * accounts via postUpdateAtomic, and returns keypairs + pre-instructions.
-   *
-   * The pre-instructions must be included BEFORE the CDP instruction in the
-   * same transaction. The keypair publicKeys are passed as `priceUpdate` /
-   * `solPriceUpdate` accounts in CDP instructions.
-   */
-  async function buildPriceIxs(cdp: ReturnType<typeof getCdpProgram>, collateralMint: PublicKey) {
+  /** Reads the Pyth feed ID hex strings from on-chain CollateralConfig and PaymentConfig. */
+  async function getFeedIds(
+    cdp: ReturnType<typeof getCdpProgram>,
+    collateralMint: PublicKey,
+  ): Promise<{ collateral: string; sol: string }> {
     const [collateralConfigData, solPaymentConfigData] = await Promise.all([
       (cdp.account as any)["collateralConfig"].fetch(deriveCollateralConfig(collateralMint)),
       (cdp.account as any)["paymentConfig"].fetch(derivePaymentConfig(SystemProgram.programId)),
     ]);
     // pyth_price_feed is stored as a Pubkey whose bytes are the 32-byte feed ID hex.
-    const collateralFeedHex = (collateralConfigData.pythPriceFeed as PublicKey).toBuffer().toString("hex");
-    const solFeedHex        = (solPaymentConfigData.pythPriceFeed  as PublicKey).toBuffer().toString("hex");
-    return buildCdpPriceUpdateIxs(connection, publicKey!, collateralFeedHex, solFeedHex);
+    return {
+      collateral: (collateralConfigData.pythPriceFeed as PublicKey).toBuffer().toString("hex"),
+      sol:        (solPaymentConfigData.pythPriceFeed  as PublicKey).toBuffer().toString("hex"),
+    };
   }
 
   /** Returns the riseSOL mint from GlobalPool. */
@@ -336,67 +334,63 @@ export function useCdp() {
       const collateralVault = deriveCollateralVault(collateralMint);
       const position        = deriveCdpPosition(publicKey, nonce);
       const riseSolMint     = await getRiseSolMint(staking);
-      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
-        await buildPriceIxs(cdp, collateralMint);
+      const feedIds         = await getFeedIds(cdp, collateralMint);
 
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
       const borrowerRiseSolAccount    = await getAssociatedTokenAddress(riseSolMint, publicKey);
       const borrowRewardsConfig       = deriveBorrowRewardsConfig();
       const borrowRewards             = deriveBorrowRewards(position);
 
-      // If collateral is SOL, wrap it to WSOL before depositing
-      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
-      const postInstructions = [];
+      // Pre-resolve wSOL state so it's available inside the consumer callback
       const isWsol = collateralMint.toBase58() === WSOL_MINT;
-      if (isWsol) {
-        const {
-          createAssociatedTokenAccountInstruction,
-          createSyncNativeInstruction,
-          createCloseAccountInstruction,
-        } = await import("@solana/spl-token");
+      const wsolState = isWsol ? {
+        ataExists: !!(await connection.getAccountInfo(borrowerCollateralAccount)),
+        spl: await import("@solana/spl-token"),
+      } : null;
 
-        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
-        if (!wsolAtaInfo) {
-          preInstructions.push(
-            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
-          );
+      await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+        const ixs: InstructionWithEphemeralSigners[] = [];
+
+        if (wsolState) {
+          if (!wsolState.ataExists) {
+            ixs.push({ instruction: wsolState.spl.createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint), signers: [] });
+          }
+          ixs.push({ instruction: SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }), signers: [] });
+          ixs.push({ instruction: wsolState.spl.createSyncNativeInstruction(borrowerCollateralAccount), signers: [] });
         }
-        preInstructions.push(
-          SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }),
-          createSyncNativeInstruction(borrowerCollateralAccount),
-        );
-        // Close the WSOL ATA after deposit to reclaim rent (~0.002 SOL)
-        postInstructions.push(
-          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
-        );
-      }
 
-      await cdp.methods
-        .openPosition(new BN(collateralLamports), new BN(borrowLamports), nonce)
-        .accounts({
-          borrower: publicKey,
-          cdpConfig,
-          globalPool,
-          position,
-          collateralConfig:          deriveCollateralConfig(collateralMint),
-          collateralMint,
-          borrowerCollateralAccount,
-          collateralVault,
-          solPaymentConfig:          derivePaymentConfig(SystemProgram.programId),
-          priceUpdate:               priceUpdateKeypair.publicKey,
-          solPriceUpdate:            solPriceUpdateKeypair.publicKey,
-          riseSolMint,
-          borrowerRiseSolAccount,
-          borrowRewardsConfig,
-          borrowRewards,
-          stakingProgram:            getProgramPublicKeys().staking,
-          tokenProgram:              TOKEN_PROGRAM_ID,
-          systemProgram:             SystemProgram.programId,
-        })
-        .preInstructions(preInstructions)
-        .postInstructions(postInstructions)
-        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-        .rpc();
+        const ix = await cdp.methods
+          .openPosition(new BN(collateralLamports), new BN(borrowLamports), nonce)
+          .accounts({
+            borrower: publicKey,
+            cdpConfig,
+            globalPool,
+            position,
+            collateralConfig:          deriveCollateralConfig(collateralMint),
+            collateralMint,
+            borrowerCollateralAccount,
+            collateralVault,
+            solPaymentConfig:          derivePaymentConfig(SystemProgram.programId),
+            priceUpdate:               getPriceUpdateAccount("0x" + feedIds.collateral),
+            solPriceUpdate:            getPriceUpdateAccount("0x" + feedIds.sol),
+            riseSolMint,
+            borrowerRiseSolAccount,
+            borrowRewardsConfig,
+            borrowRewards,
+            stakingProgram:            getProgramPublicKeys().staking,
+            tokenProgram:              TOKEN_PROGRAM_ID,
+            systemProgram:             SystemProgram.programId,
+          })
+          .instruction();
+        ixs.push({ instruction: ix, signers: [] });
+
+        if (wsolState) {
+          // Close the WSOL ATA after deposit to reclaim rent (~0.002 SOL)
+          ixs.push({ instruction: wsolState.spl.createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey), signers: [] });
+        }
+
+        return ixs;
+      });
 
       setNextPositionNonce((n) => n + 1);
       await refresh();
@@ -484,8 +478,7 @@ export function useCdp() {
       const collateralVault   = deriveCollateralVault(collateralMint);
       const cdpConfig         = deriveCdpConfig();
       const globalPool        = deriveGlobalPool();
-      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
-        await buildPriceIxs(cdp, collateralMint);
+      const feedIds           = await getFeedIds(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       // Shared Jupiter accounts needed by both repay paths
@@ -501,80 +494,82 @@ export function useCdp() {
         const riseSolMint            = await getRiseSolMint(staking);
         const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
-        await cdp.methods
-          .repayDebtRiseSol(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0)
-          .accounts({
-            borrower:                        publicKey,
-            position:                        positionPda,
-            collateralConfig,
-            riseSolMint,
-            borrowerRiseSolAccount,
-            collateralVault,
-            borrowerCollateralAccount,
-            collateralMint,
-            cdpConfig,
-            globalPool,
-            poolVault:                       derivePoolVault(),
-            treasury:                        deriveProtocolTreasury(),
-            reserveVault:                    deriveReserveVault(),
-            wsolMint,
-            cdpWsolBuybackVault,
-            solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            priceUpdate:                     priceUpdateKeypair.publicKey,
-            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
-            jupiterProgram,
-            jupiterProgramAuthority,
-            jupiterEventAuthority,
-            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
-            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
-            stakingProgram:                  getProgramPublicKeys().staking,
-            tokenProgram:                    TOKEN_PROGRAM_ID,
-            systemProgram:                   SystemProgram.programId,
-          })
-          .preInstructions([priceUpdateIx, solPriceUpdateIx])
-          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-          .rpc();
+        await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+          const ix = await cdp.methods
+            .repayDebtRiseSol(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0)
+            .accounts({
+              borrower:                        publicKey,
+              position:                        positionPda,
+              collateralConfig,
+              riseSolMint,
+              borrowerRiseSolAccount,
+              collateralVault,
+              borrowerCollateralAccount,
+              collateralMint,
+              cdpConfig,
+              globalPool,
+              poolVault:                       derivePoolVault(),
+              treasury:                        deriveProtocolTreasury(),
+              reserveVault:                    deriveReserveVault(),
+              wsolMint,
+              cdpWsolBuybackVault,
+              solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
+              priceUpdate:                     getPriceUpdateAccount("0x" + feedIds.collateral),
+              solPriceUpdate:                  getPriceUpdateAccount("0x" + feedIds.sol),
+              jupiterProgram,
+              jupiterProgramAuthority,
+              jupiterEventAuthority,
+              shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+              shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+              stakingProgram:                  getProgramPublicKeys().staking,
+              tokenProgram:                    TOKEN_PROGRAM_ID,
+              systemProgram:                   SystemProgram.programId,
+            })
+            .instruction();
+          return [{ instruction: ix, signers: [] }];
+        });
 
       } else if (currency === "SOL") {
         // Native SOL path — no swap, borrower transfers SOL directly
         const paymentMint   = new PublicKey(WSOL_MINT);
         const paymentConfig = derivePaymentConfig(paymentMint);
 
-        await cdp.methods
-          .repayDebt(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0, Buffer.alloc(0), new BN(0), 0)
-          .accounts({
-            borrower:                        publicKey,
-            position:                        positionPda,
-            collateralConfig,
-            paymentConfig,
-            globalPool,
-            cdpConfig,
-            cdpFeeVault:                     deriveCdpFeeVault(),
-            poolVault:                       derivePoolVault(),
-            collateralVault,
-            borrowerCollateralAccount,
-            collateralMint,
-            solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            priceUpdate:                     priceUpdateKeypair.publicKey,
-            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
-            paymentMint:                     PublicKey.default,
-            borrowerPaymentAccount:          PublicKey.default,
-            wsolMint,
-            cdpWsolVault,
-            cdpWsolBuybackVault,
-            jupiterProgram,
-            jupiterProgramAuthority,
-            jupiterEventAuthority,
-            jupiterSourceToken:              cdpWsolVault,       // unused for SOL path
-            jupiterDestinationToken:         cdpWsolVault,
-            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
-            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
-            tokenProgram:                    TOKEN_PROGRAM_ID,
-            systemProgram:                   SystemProgram.programId,
-          })
-          .preInstructions([priceUpdateIx, solPriceUpdateIx])
-          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-          .rpc();
+        await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+          const ix = await cdp.methods
+            .repayDebt(new BN(Math.round(amount * LAMPORTS_PER_SOL)), Buffer.alloc(0), new BN(0), 0, Buffer.alloc(0), new BN(0), 0)
+            .accounts({
+              borrower:                        publicKey,
+              position:                        positionPda,
+              collateralConfig,
+              paymentConfig,
+              globalPool,
+              cdpConfig,
+              cdpFeeVault:                     deriveCdpFeeVault(),
+              poolVault:                       derivePoolVault(),
+              collateralVault,
+              borrowerCollateralAccount,
+              collateralMint,
+              solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
+              priceUpdate:                     getPriceUpdateAccount("0x" + feedIds.collateral),
+              solPriceUpdate:                  getPriceUpdateAccount("0x" + feedIds.sol),
+              paymentMint:                     PublicKey.default,
+              borrowerPaymentAccount:          PublicKey.default,
+              wsolMint,
+              cdpWsolVault,
+              cdpWsolBuybackVault,
+              jupiterProgram,
+              jupiterProgramAuthority,
+              jupiterEventAuthority,
+              jupiterSourceToken:              cdpWsolVault,       // unused for SOL path
+              jupiterDestinationToken:         cdpWsolVault,
+              shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+              shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+              tokenProgram:                    TOKEN_PROGRAM_ID,
+              systemProgram:                   SystemProgram.programId,
+            })
+            .instruction();
+          return [{ instruction: ix, signers: [] }];
+        });
 
       } else {
         // SPL token path — swap payment token → SOL via Jupiter
@@ -597,41 +592,42 @@ export function useCdp() {
         const jupiterSourceToken  = route?.jupiterSourceToken   ?? cdpWsolVault;
         const jupiterDestToken    = route?.jupiterDestinationToken ?? cdpWsolVault;
 
-        await cdp.methods
-          .repayDebt(new BN(amountNative), routePlanData, new BN(quotedOutAmount), 50, Buffer.alloc(0), new BN(0), 0)
-          .accounts({
-            borrower:                        publicKey,
-            position:                        positionPda,
-            collateralConfig,
-            paymentConfig,
-            globalPool,
-            cdpConfig,
-            cdpFeeVault:                     deriveCdpFeeVault(),
-            poolVault:                       derivePoolVault(),
-            collateralVault,
-            borrowerCollateralAccount,
-            collateralMint,
-            solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
-            priceUpdate:                     priceUpdateKeypair.publicKey,
-            solPriceUpdate:                  solPriceUpdateKeypair.publicKey,
-            paymentMint,
-            borrowerPaymentAccount,
-            wsolMint,
-            cdpWsolVault,
-            cdpWsolBuybackVault,
-            jupiterProgram,
-            jupiterProgramAuthority,
-            jupiterEventAuthority,
-            jupiterSourceToken,
-            jupiterDestinationToken:         jupiterDestToken,
-            shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
-            shortfallJupiterDestinationToken: cdpWsolBuybackVault,
-            tokenProgram:                    TOKEN_PROGRAM_ID,
-            systemProgram:                   SystemProgram.programId,
-          })
-          .preInstructions([priceUpdateIx, solPriceUpdateIx])
-          .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-          .rpc();
+        await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+          const ix = await cdp.methods
+            .repayDebt(new BN(amountNative), routePlanData, new BN(quotedOutAmount), 50, Buffer.alloc(0), new BN(0), 0)
+            .accounts({
+              borrower:                        publicKey,
+              position:                        positionPda,
+              collateralConfig,
+              paymentConfig,
+              globalPool,
+              cdpConfig,
+              cdpFeeVault:                     deriveCdpFeeVault(),
+              poolVault:                       derivePoolVault(),
+              collateralVault,
+              borrowerCollateralAccount,
+              collateralMint,
+              solPaymentConfig:                derivePaymentConfig(SystemProgram.programId),
+              priceUpdate:                     getPriceUpdateAccount("0x" + feedIds.collateral),
+              solPriceUpdate:                  getPriceUpdateAccount("0x" + feedIds.sol),
+              paymentMint,
+              borrowerPaymentAccount,
+              wsolMint,
+              cdpWsolVault,
+              cdpWsolBuybackVault,
+              jupiterProgram,
+              jupiterProgramAuthority,
+              jupiterEventAuthority,
+              jupiterSourceToken,
+              jupiterDestinationToken:         jupiterDestToken,
+              shortfallJupiterSourceToken:     cdpWsolBuybackVault, // placeholder — unused when no shortfall
+              shortfallJupiterDestinationToken: cdpWsolBuybackVault,
+              tokenProgram:                    TOKEN_PROGRAM_ID,
+              systemProgram:                   SystemProgram.programId,
+            })
+            .instruction();
+          return [{ instruction: ix, signers: [] }];
+        });
       }
     } finally {
       setLoading(false);
@@ -653,32 +649,32 @@ export function useCdp() {
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
       const globalPool     = deriveGlobalPool();
       const riseSolMint    = await getRiseSolMint(staking);
-      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
-        await buildPriceIxs(cdp, collateralMint);
+      const feedIds        = await getFeedIds(cdp, collateralMint);
       const borrowerRiseSolAccount = await getAssociatedTokenAddress(riseSolMint, publicKey);
 
-      await cdp.methods
-        .borrowMore(new BN(Math.round(additionalRiseSol * LAMPORTS_PER_SOL)))
-        .accounts({
-          borrower: publicKey,
-          position:               positionPda,
-          collateralConfig:       deriveCollateralConfig(collateralMint),
-          globalPool,
-          cdpConfig:              deriveCdpConfig(),
-          solPaymentConfig:       derivePaymentConfig(SystemProgram.programId),
-          priceUpdate:            priceUpdateKeypair.publicKey,
-          solPriceUpdate:         solPriceUpdateKeypair.publicKey,
-          collateralMint,
-          riseSolMint,
-          borrowerRiseSolAccount,
-          stakingProgram:         getProgramPublicKeys().staking,
-          tokenProgram:           TOKEN_PROGRAM_ID,
-          borrowRewardsConfig:    deriveBorrowRewardsConfig(),
-          borrowRewards:          deriveBorrowRewards(positionPda),
-        })
-        .preInstructions([priceUpdateIx, solPriceUpdateIx])
-        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-        .rpc();
+      await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+        const ix = await cdp.methods
+          .borrowMore(new BN(Math.round(additionalRiseSol * LAMPORTS_PER_SOL)))
+          .accounts({
+            borrower: publicKey,
+            position:               positionPda,
+            collateralConfig:       deriveCollateralConfig(collateralMint),
+            globalPool,
+            cdpConfig:              deriveCdpConfig(),
+            solPaymentConfig:       derivePaymentConfig(SystemProgram.programId),
+            priceUpdate:            getPriceUpdateAccount("0x" + feedIds.collateral),
+            solPriceUpdate:         getPriceUpdateAccount("0x" + feedIds.sol),
+            collateralMint,
+            riseSolMint,
+            borrowerRiseSolAccount,
+            stakingProgram:         getProgramPublicKeys().staking,
+            tokenProgram:           TOKEN_PROGRAM_ID,
+            borrowRewardsConfig:    deriveBorrowRewardsConfig(),
+            borrowRewards:          deriveBorrowRewards(positionPda),
+          })
+          .instruction();
+        return [{ instruction: ix, signers: [] }];
+      });
     } finally {
       setLoading(false);
     }
@@ -696,56 +692,53 @@ export function useCdp() {
       const cdp            = getCdpProgram(provider);
       const collateralMint = new PublicKey(position.collateralMint);
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
-      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
-        await buildPriceIxs(cdp, collateralMint);
+      const feedIds        = await getFeedIds(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
       const collateralDecimals = collateralInfo?.decimals ?? 9;
       const collateralLamports = Math.round(amount * Math.pow(10, collateralDecimals));
 
-      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
-      const postInstructions: import("@solana/web3.js").TransactionInstruction[] = [];
       const isWsol = collateralMint.toBase58() === WSOL_MINT;
-      if (isWsol) {
-        const {
-          createAssociatedTokenAccountInstruction,
-          createSyncNativeInstruction,
-          createCloseAccountInstruction,
-        } = await import("@solana/spl-token");
-        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
-        if (!wsolAtaInfo) {
-          preInstructions.push(
-            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
-          );
-        }
-        preInstructions.push(
-          SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }),
-          createSyncNativeInstruction(borrowerCollateralAccount),
-        );
-        postInstructions.push(
-          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
-        );
-      }
+      const wsolState = isWsol ? {
+        ataExists: !!(await connection.getAccountInfo(borrowerCollateralAccount)),
+        spl: await import("@solana/spl-token"),
+      } : null;
 
-      await cdp.methods
-        .addCollateral(new BN(collateralLamports))
-        .accounts({
-          borrower: publicKey,
-          position:                 positionPda,
-          collateralConfig:         deriveCollateralConfig(collateralMint),
-          collateralMint,
-          borrowerCollateralAccount,
-          collateralVault:          deriveCollateralVault(collateralMint),
-          solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
-          priceUpdate:              priceUpdateKeypair.publicKey,
-          solPriceUpdate:           solPriceUpdateKeypair.publicKey,
-          tokenProgram:             TOKEN_PROGRAM_ID,
-        })
-        .preInstructions(preInstructions)
-        .postInstructions(postInstructions)
-        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-        .rpc();
+      await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+        const ixs: InstructionWithEphemeralSigners[] = [];
+
+        if (wsolState) {
+          if (!wsolState.ataExists) {
+            ixs.push({ instruction: wsolState.spl.createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint), signers: [] });
+          }
+          ixs.push({ instruction: SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: borrowerCollateralAccount, lamports: collateralLamports }), signers: [] });
+          ixs.push({ instruction: wsolState.spl.createSyncNativeInstruction(borrowerCollateralAccount), signers: [] });
+        }
+
+        const ix = await cdp.methods
+          .addCollateral(new BN(collateralLamports))
+          .accounts({
+            borrower: publicKey,
+            position:                 positionPda,
+            collateralConfig:         deriveCollateralConfig(collateralMint),
+            collateralMint,
+            borrowerCollateralAccount,
+            collateralVault:          deriveCollateralVault(collateralMint),
+            solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
+            priceUpdate:              getPriceUpdateAccount("0x" + feedIds.collateral),
+            solPriceUpdate:           getPriceUpdateAccount("0x" + feedIds.sol),
+            tokenProgram:             TOKEN_PROGRAM_ID,
+          })
+          .instruction();
+        ixs.push({ instruction: ix, signers: [] });
+
+        if (wsolState) {
+          ixs.push({ instruction: wsolState.spl.createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey), signers: [] });
+        }
+
+        return ixs;
+      });
     } finally {
       setLoading(false);
     }
@@ -768,53 +761,51 @@ export function useCdp() {
       const cdp            = getCdpProgram(provider);
       const collateralMint = new PublicKey(position.collateralMint);
       const positionPda    = deriveCdpPosition(publicKey, position.nonce);
-      const { priceUpdateKeypair, solPriceUpdateKeypair, priceUpdateIx, solPriceUpdateIx } =
-        await buildPriceIxs(cdp, collateralMint);
+      const feedIds        = await getFeedIds(cdp, collateralMint);
       const borrowerCollateralAccount = await getAssociatedTokenAddress(collateralMint, publicKey);
 
       const collateralInfo = MOCK_COLLATERALS.find((c) => c.mint === position.collateralMint);
       const collateralDecimals = collateralInfo?.decimals ?? 9;
 
-      const preInstructions = [priceUpdateIx, solPriceUpdateIx];
-      const postInstructions: import("@solana/web3.js").TransactionInstruction[] = [];
       const isWsol = collateralMint.toBase58() === WSOL_MINT;
-      if (isWsol) {
-        const {
-          createAssociatedTokenAccountInstruction,
-          createCloseAccountInstruction,
-        } = await import("@solana/spl-token");
-        const wsolAtaInfo = await connection.getAccountInfo(borrowerCollateralAccount);
-        if (!wsolAtaInfo) {
-          preInstructions.push(
-            createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint)
-          );
-        }
-        // Close ATA after withdrawal to unwrap wSOL → native SOL
-        postInstructions.push(
-          createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey)
-        );
-      }
+      const wsolState = isWsol ? {
+        ataExists: !!(await connection.getAccountInfo(borrowerCollateralAccount)),
+        spl: await import("@solana/spl-token"),
+      } : null;
 
-      await cdp.methods
-        .withdrawExcess(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
-        .accounts({
-          borrower: publicKey,
-          position:                 positionPda,
-          collateralConfig:         deriveCollateralConfig(collateralMint),
-          collateralMint,
-          borrowerCollateralAccount,
-          collateralVault:          deriveCollateralVault(collateralMint),
-          cdpConfig:                deriveCdpConfig(),
-          globalPool:               deriveGlobalPool(),
-          solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
-          priceUpdate:              priceUpdateKeypair.publicKey,
-          solPriceUpdate:           solPriceUpdateKeypair.publicKey,
-          tokenProgram:             TOKEN_PROGRAM_ID,
-        })
-        .preInstructions(preInstructions)
-        .postInstructions(postInstructions)
-        .signers([priceUpdateKeypair, solPriceUpdateKeypair])
-        .rpc();
+      await sendWithPriceUpdates(provider, feedIds, async (getPriceUpdateAccount) => {
+        const ixs: InstructionWithEphemeralSigners[] = [];
+
+        if (wsolState && !wsolState.ataExists) {
+          ixs.push({ instruction: wsolState.spl.createAssociatedTokenAccountInstruction(publicKey, borrowerCollateralAccount, publicKey, collateralMint), signers: [] });
+        }
+
+        const ix = await cdp.methods
+          .withdrawExcess(new BN(Math.round(amount * Math.pow(10, collateralDecimals))))
+          .accounts({
+            borrower: publicKey,
+            position:                 positionPda,
+            collateralConfig:         deriveCollateralConfig(collateralMint),
+            collateralMint,
+            borrowerCollateralAccount,
+            collateralVault:          deriveCollateralVault(collateralMint),
+            cdpConfig:                deriveCdpConfig(),
+            globalPool:               deriveGlobalPool(),
+            solPaymentConfig:         derivePaymentConfig(SystemProgram.programId),
+            priceUpdate:              getPriceUpdateAccount("0x" + feedIds.collateral),
+            solPriceUpdate:           getPriceUpdateAccount("0x" + feedIds.sol),
+            tokenProgram:             TOKEN_PROGRAM_ID,
+          })
+          .instruction();
+        ixs.push({ instruction: ix, signers: [] });
+
+        if (wsolState) {
+          // Close ATA after withdrawal to unwrap wSOL → native SOL
+          ixs.push({ instruction: wsolState.spl.createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey), signers: [] });
+        }
+
+        return ixs;
+      });
     } finally {
       setLoading(false);
     }

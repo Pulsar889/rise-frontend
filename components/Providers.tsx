@@ -1,6 +1,6 @@
 "use client";
 import { Buffer } from "buffer";
-if (typeof globalThis.Buffer === "undefined") globalThis.Buffer = Buffer;
+globalThis.Buffer = Buffer;
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { useMemo } from "react";

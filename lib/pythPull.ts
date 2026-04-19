@@ -71,14 +71,23 @@ export async function sendWithPriceUpdates(
   for (const { tx, signers } of txsWithSigners) {
     tx.message.recentBlockhash = blockhash;
     if (signers.length > 0) tx.sign(signers);
-    const signedTx = await provider.wallet.signTransaction(tx);
-    const raw = signedTx.serialize();
-    const sig = await provider.connection.sendRawTransaction(raw, {
-      skipPreflight: false,
+  }
+
+  const signedTxs = await provider.wallet.signAllTransactions(
+    txsWithSigners.map(({ tx }) => tx)
+  );
+
+  for (const tx of signedTxs) {
+    const sig = await provider.connection.sendRawTransaction(tx.serialize(), {
+      skipPreflight: true,
     });
-    await provider.connection.confirmTransaction(
-      { signature: sig, blockhash, lastValidBlockHeight },
-      "confirmed",
-    );
+    try {
+      await provider.connection.confirmTransaction(
+        { signature: sig, blockhash, lastValidBlockHeight },
+        "confirmed",
+      );
+    } catch (err: any) {
+      if (!err?.message?.includes("already been processed")) throw err;
+    }
   }
 }

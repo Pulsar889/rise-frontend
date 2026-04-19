@@ -87,7 +87,17 @@ export async function sendWithPriceUpdates(
         "confirmed",
       );
       if (result.value.err) {
-        throw new Error(`Transaction failed: ${JSON.stringify(result.value.err)}`);
+        let logs: string[] = [];
+        try {
+          const tx = await provider.connection.getTransaction(sig, { maxSupportedTransactionVersion: 0 });
+          logs = tx?.meta?.logMessages ?? [];
+        } catch {
+          // ignore — logs are best-effort
+        }
+        throw new Error(
+          `Transaction failed: ${JSON.stringify(result.value.err)}` +
+          (logs.length ? `\n\nLogs:\n${logs.join("\n")}` : "")
+        );
       }
     } catch (err: any) {
       if (!err?.message?.includes("already been processed")) throw err;

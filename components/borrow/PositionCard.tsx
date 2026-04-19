@@ -15,6 +15,8 @@ export function PositionCard({ position }: PositionCardProps) {
   const [showRepay, setShowRepay] = useState(false);
   const [showBorrow, setShowBorrow] = useState(false);
   const [borrowAmount, setBorrowAmount] = useState("");
+  const [borrowError, setBorrowError] = useState<string | null>(null);
+  const [borrowSuccess, setBorrowSuccess] = useState(false);
   const { borrowMore, loading, collaterals, pricesLoaded } = useCdp();
   const { data: staking } = useStaking();
 
@@ -48,9 +50,16 @@ export function PositionCard({ position }: PositionCardProps) {
   async function handleBorrowMore() {
     const num = parseFloat(borrowAmount);
     if (!num || num <= 0) return;
-    await borrowMore(position, num);
-    setBorrowAmount("");
-    setShowBorrow(false);
+    setBorrowError(null);
+    setBorrowSuccess(false);
+    try {
+      await borrowMore(position, num);
+      setBorrowAmount("");
+      setBorrowSuccess(true);
+      setTimeout(() => { setBorrowSuccess(false); setShowBorrow(false); }, 2000);
+    } catch (err: any) {
+      setBorrowError(err?.message ?? "Transaction failed");
+    }
   }
 
   return (
@@ -128,6 +137,16 @@ export function PositionCard({ position }: PositionCardProps) {
         <div className="flex flex-col gap-3 border-t border-[#334155] pt-4">
           <p className="text-sm font-medium text-[#F1F5F9]">Borrow More riseSOL</p>
           <TokenInput token="riseSOL" value={borrowAmount} onChange={setBorrowAmount} />
+          {borrowSuccess && (
+            <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-400">
+              Borrow successful!
+            </div>
+          )}
+          {borrowError && (
+            <div className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 break-all">
+              {borrowError}
+            </div>
+          )}
           <button
             onClick={handleBorrowMore}
             disabled={loading || !borrowAmount || parseFloat(borrowAmount) <= 0}

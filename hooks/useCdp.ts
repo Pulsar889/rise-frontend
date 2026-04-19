@@ -385,7 +385,6 @@ export function useCdp() {
         ixs.push({ instruction: ix, signers: [] });
 
         if (wsolState) {
-          // Close the WSOL ATA after deposit to reclaim rent (~0.002 SOL)
           ixs.push({ instruction: wsolState.spl.createCloseAccountInstruction(borrowerCollateralAccount, publicKey, publicKey), signers: [] });
         }
 
@@ -528,6 +527,7 @@ export function useCdp() {
             .instruction();
           return [{ instruction: ix, signers: [] }];
         });
+        await refresh();
 
       } else if (currency === "SOL") {
         // Native SOL path — no swap, borrower transfers SOL directly
@@ -570,6 +570,7 @@ export function useCdp() {
             .instruction();
           return [{ instruction: ix, signers: [] }];
         });
+        await refresh();
 
       } else {
         // SPL token path — swap payment token → SOL via Jupiter
@@ -628,11 +629,12 @@ export function useCdp() {
             .instruction();
           return [{ instruction: ix, signers: [] }];
         });
+        await refresh();
       }
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, connection]);
+  }, [wallet, publicKey, connection, refresh]);
 
   /** Borrows additional riseSOL against an existing open position. */
   const borrowMore = useCallback(async (
@@ -675,10 +677,11 @@ export function useCdp() {
           .instruction();
         return [{ instruction: ix, signers: [] }];
       });
+      await refresh();
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, connection]);
+  }, [wallet, publicKey, connection, refresh]);
 
   /** Deposits additional collateral into an existing open position. */
   const addCollateral = useCallback(async (
@@ -739,10 +742,11 @@ export function useCdp() {
 
         return ixs;
       });
+      await refresh();
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, connection]);
+  }, [wallet, publicKey, connection, refresh]);
 
   /**
    * Withdraws excess collateral immediately (no delay).
@@ -806,10 +810,11 @@ export function useCdp() {
 
         return ixs;
       });
+      await refresh();
     } finally {
       setLoading(false);
     }
-  }, [wallet, publicKey, connection]);
+  }, [wallet, publicKey, connection, refresh]);
 
   return {
     positions,

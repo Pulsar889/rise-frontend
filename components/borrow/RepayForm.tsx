@@ -27,6 +27,8 @@ interface RepayFormProps {
 export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("SOL");
+  const [txError, setTxError] = useState<string | null>(null);
+  const [txSuccess, setTxSuccess] = useState(false);
   const { publicKey } = useWallet();
   const { repayDebt, loading, collaterals } = useCdp();
   const { data: staking } = useStaking();
@@ -70,8 +72,16 @@ export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
 
   async function handleRepay() {
     if (!num || num <= 0 || isOverMax) return;
-    await repayDebt(position, num, currency);
-    setAmount("");
+    setTxError(null);
+    setTxSuccess(false);
+    try {
+      await repayDebt(position, num, currency);
+      setAmount("");
+      setTxSuccess(true);
+      setTimeout(() => setTxSuccess(false), 3000);
+    } catch (err: any) {
+      setTxError(err?.message ?? "Transaction failed");
+    }
   }
 
   return (
@@ -158,6 +168,18 @@ export function RepayForm({ position, debtRiseSol }: RepayFormProps) {
           ) : (
             <p className="text-sm text-[#94A3B8]">Enter an amount to see the estimate</p>
           )}
+        </div>
+      )}
+
+      {txSuccess && (
+        <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-400">
+          Repayment successful!
+        </div>
+      )}
+
+      {txError && (
+        <div className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 break-all">
+          {txError}
         </div>
       )}
 

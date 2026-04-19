@@ -7,7 +7,7 @@ import { useCdp } from "@/hooks/useCdp";
 
 export default function BorrowPage() {
   const [showOpen, setShowOpen] = useState(false);
-  const { positions, collaterals, pricesLoaded } = useCdp();
+  const { positions, collaterals, pricesLoaded, refresh } = useCdp();
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
@@ -34,7 +34,7 @@ export default function BorrowPage() {
         <div className="mb-8">
           <Card padding="lg">
             <h2 className="font-semibold text-[#F1F5F9] mb-5">Open New Position</h2>
-            <OpenPositionForm />
+            <OpenPositionForm onSuccess={() => { refresh(); setShowOpen(false); }} />
           </Card>
         </div>
       )}

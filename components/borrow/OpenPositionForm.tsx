@@ -8,7 +8,11 @@ import { useCdp } from "@/hooks/useCdp";
 import { useStaking } from "@/hooks/useStaking";
 import { WSOL_MINT } from "@/lib/constants";
 
-export function OpenPositionForm() {
+interface OpenPositionFormProps {
+  onSuccess?: () => void;
+}
+
+export function OpenPositionForm({ onSuccess }: OpenPositionFormProps) {
   const [collateral, setCollateral] = useState("");
   const [borrow, setBorrow] = useState("");
   const [selectedCollateral, setSelectedCollateral] = useState("SOL");
@@ -18,6 +22,7 @@ export function OpenPositionForm() {
   const { data: staking } = useStaking();
   const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined);
   const [txError, setTxError] = useState<string | null>(null);
+  const [txSuccess, setTxSuccess] = useState(false);
 
   const config = collaterals.find((c) => c.symbol === selectedCollateral);
   const solPriceUsd = collaterals.find((c) => c.symbol === "SOL")?.priceUsd ?? 0;
@@ -92,10 +97,16 @@ export function OpenPositionForm() {
   async function handleOpen() {
     if (!collateral || !borrow) return;
     setTxError(null);
+    setTxSuccess(false);
     try {
       await openPosition(selectedCollateral, collateralNum, borrowNum);
       setCollateral("");
       setBorrow("");
+      setTxSuccess(true);
+      setTimeout(() => {
+        setTxSuccess(false);
+        onSuccess?.();
+      }, 2000);
     } catch (err: any) {
       setTxError(err?.message ?? "Transaction failed");
     }
@@ -157,6 +168,12 @@ export function OpenPositionForm() {
           <span className={`font-semibold ${overLtv ? "text-red-400" : "text-[#F1F5F9]"}`}>
             {currentLtv.toFixed(1)}% / {config?.ltv}% max
           </span>
+        </div>
+      )}
+
+      {txSuccess && (
+        <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-400">
+          Position opened successfully!
         </div>
       )}
 

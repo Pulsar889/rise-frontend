@@ -62,7 +62,7 @@ export async function sendWithPriceUpdates(
 
   const txsWithSigners = await builder.buildVersionedTransactions({
     computeUnitPriceMicroLamports: 50_000,
-    tightComputeBudget: true,
+    tightComputeBudget: false,
   });
 
   const { blockhash, lastValidBlockHeight } =

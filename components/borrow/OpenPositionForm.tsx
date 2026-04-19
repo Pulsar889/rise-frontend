@@ -97,7 +97,7 @@ export function OpenPositionForm() {
       setCollateral("");
       setBorrow("");
     } catch (err: any) {
-      setTxError((err?.message ?? "Transaction failed") + (err?.stack ? "\n\n" + err.stack : ""));
+      setTxError(err?.message ?? "Transaction failed");
     }
   }
 
@@ -161,9 +161,9 @@ export function OpenPositionForm() {
       )}
 
       {txError && (
-        <pre className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-xs text-red-400 whitespace-pre-wrap break-all">
+        <div className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 break-all">
           {txError}
-        </pre>
+        </div>
       )}
 
       <button

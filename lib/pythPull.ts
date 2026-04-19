@@ -82,10 +82,13 @@ export async function sendWithPriceUpdates(
       skipPreflight: true,
     });
     try {
-      await provider.connection.confirmTransaction(
+      const result = await provider.connection.confirmTransaction(
         { signature: sig, blockhash, lastValidBlockHeight },
         "confirmed",
       );
+      if (result.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(result.value.err)}`);
+      }
     } catch (err: any) {
       if (!err?.message?.includes("already been processed")) throw err;
     }

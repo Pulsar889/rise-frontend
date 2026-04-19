@@ -65,5 +65,20 @@ export async function sendWithPriceUpdates(
     tightComputeBudget: true,
   });
 
-  await provider.sendAll(txsWithSigners);
+  const { blockhash, lastValidBlockHeight } =
+    await provider.connection.getLatestBlockhash();
+
+  for (const { tx, signers } of txsWithSigners) {
+    tx.message.recentBlockhash = blockhash;
+    if (signers.length > 0) tx.sign(signers);
+    const signedTx = await provider.wallet.signTransaction(tx);
+    const raw = signedTx.serialize();
+    const sig = await provider.connection.sendRawTransaction(raw, {
+      skipPreflight: false,
+    });
+    await provider.connection.confirmTransaction(
+      { signature: sig, blockhash, lastValidBlockHeight },
+      "confirmed",
+    );
+  }
 }

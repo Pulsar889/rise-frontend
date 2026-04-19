@@ -2,13 +2,13 @@
 import { Buffer } from "buffer";
 globalThis.Buffer = Buffer;
 
-if (!Uint8Array.prototype.readUint8) {
+if (!(Uint8Array.prototype as any).readUint8) {
   Object.defineProperty(Uint8Array.prototype, "readUint8", {
     value: function (offset: number) { return this[offset]; },
     writable: true, configurable: true,
   });
 }
-if (!Uint8Array.prototype.readUInt8) {
+if (!(Uint8Array.prototype as any).readUInt8) {
   Object.defineProperty(Uint8Array.prototype, "readUInt8", {
     value: function (offset: number) { return this[offset]; },
     writable: true, configurable: true,
